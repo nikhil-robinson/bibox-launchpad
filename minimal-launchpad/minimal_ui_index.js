@@ -9,6 +9,14 @@ const lblConnTo = document.getElementById("lblConnTo");
 const message = document.getElementById("message");
 const commandForm = document.getElementById("commandForm");
 const commandInput = document.getElementById("commandInput");
+const errorTroubleshootModalToggleButton = document.getElementById("errorTroubleshootModalToggleButton");
+const errorTroubleshootModal = document.getElementById("errorTroubleshootModal");
+const errorTroubleshootModalTitle = document.getElementById("errorTroubleshootModalTitle");
+const waitButton = document.getElementById("waitButton");
+const errorMessage = document.getElementById("errorMessage");
+const errorMessageDescription = document.getElementById("errorMessageDescription");
+const deviceConnectionDelayTimeout = 30000;
+let deviceConnectionTimeout = undefined;
 const commandHistory = [];
 let historyIndex = -1;
 
@@ -83,6 +91,14 @@ async function downloadAndFlash() {
         };
         await esploader.write_flash(flashOptions);
     } catch (error) {
+        errorTroubleshootModalToggleButton.click();
+        waitButton.style.display = "none";
+        errorTroubleshootModalTitle.textContent = "Flashing Error";
+        errorMessageDescription.textContent = "There is an error while flashing the firmware onto the device.";
+        errorMessage.textContent = `Error: ${error.message}`;
+        errorMessage.style.display = "block";
+        term.writeln(`\x1b[1;31mError: ${error.message}`);
+        throw "Flashing Error";
     }
 }
 
@@ -92,7 +108,9 @@ function MDtoHtml() {
     converter.setFlavor('github');
     try {
         fetch(config[config[application][0]].readme.text).then(response => {
-            return response.text();
+            if (response.ok) {
+                return response.text();
+            }
         }).then(result => {
             let htmlText = converter.makeHtml(result);
             if (htmlText) {
@@ -102,6 +120,9 @@ function MDtoHtml() {
                 terminalContainer.classList.remove("col-12", "fade-in");
                 terminalContainer.classList.add("col-6", "slide-right");
                 utilities.resizeTerminal(fitAddon);
+                setTimeout(() => {
+                    utilities.resizeTerminal(fitAddon);
+                }, 300)
             } else {
                 message.style.display = "none";
             }
@@ -129,7 +150,7 @@ async function buildMinimalLaunchpadUI() {
         xhr.onload = function () {
             if (xhr.status === 404) {
                 connectButton.disabled = true;
-                alertContainer.style.display = 'initial';
+                alertContainer.style.display = 'block';
                 lblConnTo.innerHTML = `<b style='text-align:center'><span style='color:red;'>Unable to access the TOML file. Please ensure that you have provided the correct TOML file link to the flashConfigURL parameter.</span></b>`;
                 lblConnTo.style.display = "block";
             }
@@ -140,7 +161,7 @@ async function buildMinimalLaunchpadUI() {
         }
     } else {
         connectButton.disabled = true;
-        alertContainer.style.display = 'initial';
+        alertContainer.style.display = 'block';
         lblConnTo.innerHTML = `<b><span style='color:red;'>Please provide a TOML link supported by the minimal launchpad in flashConfigURL as shown below</span></b>
         <br /><code style="color:#664d03">https://espressif.github.io/esp-launchpad/minimal-launchpad/?flashConfigURL=&ltYOUR_TOML_FILE_LINK&gt</code>`;
         lblConnTo.style.display = "block";
@@ -171,6 +192,9 @@ async function connectToDevice() {
         device = await navigator.serial.requestPort({
             filters: utilities.usbPortFilters
         });
+        deviceConnectionTimeout = setTimeout(function() {
+            errorTroubleshootModalToggleButton.click();
+        }, deviceConnectionDelayTimeout);
         transport = new Transport(device);
     }
     spinner.style.display = "flex";
@@ -197,12 +221,27 @@ async function connectToDevice() {
         connected = true;
 
         chipDesc = await esploader.main_fn();
+        clearTimeout(deviceConnectionTimeout);
+        if (errorTroubleshootModal.classList.contains("show")) {
+            errorTroubleshootModalToggleButton.click();
+        }
         chip = esploader.chip.CHIP_NAME;
 
         await esploader.flash_id();
-    } catch (e) {
+    } catch (error) {
+        clearTimeout(deviceConnectionTimeout);
+        if (!errorTroubleshootModal.classList.contains("show")) {
+            errorTroubleshootModalToggleButton.click();
+        }
+        waitButton.style.display = "none";
+        errorTroubleshootModalTitle.textContent = "Connection Error";
+        errorMessageDescription.textContent = "There is an error while connecting to the device.";
+        errorMessage.textContent = `Error: ${error.message}`;
+        errorMessage.style.display = "block";
+        throw "Connection Error";
+    } finally {
+        spinner.style.display = "none";
     }
-    spinner.style.display = "none";
 }
 
 connectButton.onclick = async () => {
@@ -212,25 +251,22 @@ connectButton.onclick = async () => {
         if (chipDesc !== "default") {
             terminalContainer.classList.add("fade-in");
             if (config.portConnectionOptions?.length) {
-                commandForm.style.display = "initial";
+                commandForm.style.display = "block";
             }
-            terminalContainer.style.display = 'initial'
+            terminalContainer.style.display = 'block';
+            setTimeout(() => {
+                utilities.resizeTerminal(fitAddon);
+            }, 300)
             setImagePartsAndOffsetArray();
             await downloadAndFlash();
+            if (config.portConnectionOptions?.length) {
+                commandInput.disabled = false;
+            }
             consoleStartButton.disabled = false;
             MDtoHtml();
             setTimeout(() => {
                 productInfoContainer.classList.add("bounce");
             }, 2500)
-        } else {
-            alertContainer.style.display = "initial";
-            lblConnTo.innerHTML = "<b><span style='color:red'>Unable to connect device. Please ensure the device is not connected in another application</span></b>";
-            lblConnTo.style.display = "block";
-            setTimeout(() => {
-                alertContainer.style.display = "none";
-                connectButton.style.display = "inline-flex";
-                connected = false;
-            }, 5000)
         }
     } catch (error) {
         if (error.message === "Failed to execute 'requestPort' on 'Serial': No port selected by the user.") {
@@ -283,10 +319,15 @@ async function sendCommand() {
     let commandToSend;
     let textEncoder = new TextEncoder();
     if (!device.writable.locked) writer = device.writable.getWriter();
-    commandToSend = commandInput.value;
+    const cursorPosition = commandInput.selectionStart;
+    const textBeforeCursor = commandInput.value.substring(0, cursorPosition - 1);
+    const textAfterCursor = commandInput.value.substring(cursorPosition);
+    commandToSend = textBeforeCursor + textAfterCursor;
+    commandToSend = commandToSend.trim();
     commandHistory.unshift(commandToSend);
     historyIndex = -1;
     commandInput.value = "";
+    commandInput.style.height = null;
     commandToSend = commandToSend + "\r\n";
     await writer.write(textEncoder.encode(commandToSend));
     writer.releaseLock();
@@ -299,10 +340,11 @@ function getHistory(direction) {
     } else {
         commandInput.value = "";
     }
+    autoResize();
 }
 
 commandInput.addEventListener("keyup", async function (event) {
-    if (event.code === "Enter") {
+    if (event.code === "Enter" && !event.shiftKey) {
         await sendCommand();
     } else if (event.code === "ArrowUp") {
         getHistory(1);
@@ -311,7 +353,24 @@ commandInput.addEventListener("keyup", async function (event) {
     }
 });
 
+commandInput.addEventListener("input", autoResize);
+
+function autoResize() {
+    commandInput.style.height = "auto";
+    commandInput.style.height = commandInput.scrollHeight + "px";
+}
+
+waitButton.onclick = () => {
+    clearTimeout(deviceConnectionTimeout);
+    deviceConnectionTimeout = setTimeout(function(){
+        errorTroubleshootModalToggleButton.click();
+    }, deviceConnectionDelayTimeout);
+}
+
 $(window).resize(function () {
     clearTimeout(resizeTimeout);
-    resizeTimeout = setTimeout(() => utilities.resizeTerminal(fitAddon), 300);
+    resizeTimeout = setTimeout(() => {
+        term.resize(utilities.getTerminalColumns(), 23);
+        utilities.resizeTerminal(fitAddon);
+    }, 300);
 });

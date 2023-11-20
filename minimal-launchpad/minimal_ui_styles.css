@@ -1,18 +1,15 @@
 .maincontainer {
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
-  height: 50%;
 }
 
 .terminal {
   padding-left: 5px;
 }
 
-.productinfocontainer,
-.terminalcontainer {
-  max-height: 590px;
+.productinfocontainer {
+  max-height: 90vh;
   overflow-y: auto;
 }
 
@@ -82,6 +79,13 @@
   animation: bounce 2s ease-in-out;
 }
 
+.errorMessage {
+  font-size: 14px;
+  background-color: #f1d2d2;
+  border: 1px solid #d4bcbc;
+  color: #a35c5c;
+  padding: 5px;
+}
 @keyframes bounce {
 
   0%,
