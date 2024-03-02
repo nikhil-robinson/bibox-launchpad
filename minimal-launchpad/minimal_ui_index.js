@@ -15,10 +15,13 @@ const errorTroubleshootModalTitle = document.getElementById("errorTroubleshootMo
 const waitButton = document.getElementById("waitButton");
 const errorMessage = document.getElementById("errorMessage");
 const errorMessageDescription = document.getElementById("errorMessageDescription");
+const troubleshootAccordionLabel = document.getElementById("troubleshootAccordionLabel");
+const troubleshootAccordion = document.getElementById("troubleshootAccordion");
 const deviceConnectionDelayTimeout = 30000;
 let deviceConnectionTimeout = undefined;
 const commandHistory = [];
 let historyIndex = -1;
+let tomlFileURL = undefined;
 
 import * as utilities from "../js/utils.js"
 import * as esptooljs from "../node_modules/esptool-js/bundle.js";
@@ -43,6 +46,7 @@ let device = null;
 let transport;
 let chip = "default";
 let chipDesc = "default";
+let consoleBaudrateFromToml;
 let esploader;
 let connected = false;
 let resizeTimeout = false;
@@ -78,7 +82,7 @@ async function downloadAndFlash() {
     let fileArr = []
     for (let index = 0; index < imagePartsArray.length; index++) {
         let data = await utilities.getImageData(imagePartsArray[index]);
-        fileArr.push({ data: data, address: imagePartsOffsetArray[index] });
+        fileArr.push({ data: data, address: parseInt(imagePartsOffsetArray[index]) });
     }
     try {
         const flashOptions = {
@@ -89,7 +93,7 @@ async function downloadAndFlash() {
             eraseAll: true, // Always erasing before flash
             compress: true,
         };
-        await esploader.write_flash(flashOptions);
+        await esploader.writeFlash(flashOptions);
     } catch (error) {
         errorTroubleshootModalToggleButton.click();
         waitButton.style.display = "none";
@@ -134,7 +138,6 @@ function MDtoHtml() {
 }
 // Build the Minimal Launchpad UI using the config toml file.
 async function buildMinimalLaunchpadUI() {
-    let tomlFileURL = undefined;
     const urlParams = new URLSearchParams(window.location.search);
     const url = window.location.search;
     const parameter = "flashConfigURL";
@@ -156,8 +159,18 @@ async function buildMinimalLaunchpadUI() {
             }
             if (xhr.readyState === 4 && xhr.status === 200) {
                 config = toml.parse(xhr.responseText);
-                return config;
+                connectButton.disabled = false;
             }
+        }
+        xhr.onerror = function () {
+            connectButton.style.display = "none";
+            waitButton.style.display = "none";
+            troubleshootAccordionLabel.style.display = "none"
+            troubleshootAccordion.style.display = "none";
+            errorTroubleshootModalTitle.textContent = "Error getting config file";
+            errorMessageDescription.innerHTML = `We are encountering issues downloading the configuration file. Please verify if you can 
+            download <a href=${tomlFileURL} target="_blank">this file</a>, if not, check your network settings (Firewall, VPN, etc.) and try again.`
+            errorTroubleshootModalToggleButton.click();
         }
     } else {
         connectButton.disabled = true;
@@ -168,7 +181,7 @@ async function buildMinimalLaunchpadUI() {
     }
 }
 
-config = await buildMinimalLaunchpadUI();
+await buildMinimalLaunchpadUI();
 
 $(function () {
     utilities.initializeTooltips();
@@ -202,32 +215,34 @@ async function connectToDevice() {
     spinner.style.alignItems = "center";
 
     try {
+        const commonLoaderOptions = {
+            transport: transport,
+            baudrate: 460800,
+            terminal: espLoaderTerminal,
+        };
+
         let loaderOptions;
+
         if (config.portConnectionOptions?.length) {
             loaderOptions = {
-                transport: transport,
-                baudrate: config.portConnectionOptions[0]?.baudRate,
-                terminal: espLoaderTerminal,
+                ...commonLoaderOptions,
                 serialOptions,
             };
         } else {
-            loaderOptions = {
-                transport: transport,
-                baudrate: 460800,
-                terminal: espLoaderTerminal,
-            };
+            loaderOptions = commonLoaderOptions;
         }
+
         esploader = new ESPLoader(loaderOptions);
         connected = true;
 
-        chipDesc = await esploader.main_fn();
+        chipDesc = await esploader.main();
         clearTimeout(deviceConnectionTimeout);
         if (errorTroubleshootModal.classList.contains("show")) {
             errorTroubleshootModalToggleButton.click();
         }
         chip = esploader.chip.CHIP_NAME;
 
-        await esploader.flash_id();
+        await esploader.flashId();
     } catch (error) {
         clearTimeout(deviceConnectionTimeout);
         if (!errorTroubleshootModal.classList.contains("show")) {
@@ -286,9 +301,10 @@ consoleStartButton.onclick = async () => {
         }
     }
     if (config.portConnectionOptions?.length) {
-        await transport.connect(config.portConnectionOptions[0]?.baudRate, serialOptions);
+        await transport.connect(parseInt(config.portConnectionOptions[0]?.baudRate), serialOptions);
     } else {
-        await transport.connect();
+        consoleBaudrateFromToml = config[config['supported_apps'][0]].console_baudrate;
+        await transport.connect(consoleBaudrateFromToml);
     }
     await transport.setDTR(false);
     await new Promise(resolve => setTimeout(resolve, 100));
