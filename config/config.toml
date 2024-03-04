@@ -8,5 +8,3 @@ supported_apps = ["TED"]
 [TED]
 chipsets = ["ESP32-S3"]
 image.esp32-s3 = "ted/peecee-v1.bin"
-android_app_url = "https://play.google.com/store/apps/details?id=com.espressif.rainmaker"
-ios_app_url = "https://apps.apple.com/app/esp-rainmaker/id1497491540"
