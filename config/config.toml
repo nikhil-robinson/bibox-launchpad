@@ -2,9 +2,54 @@ esp_toml_version = 1.0
 
 firmware_images_url = "https://embedded.plode.org/bins/"
 
-supported_apps = ["TED"]
+supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING-0.1", "ZING","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "ROBOTIC_ARM", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY"]
 
-
-[TED]
+[PLAYCOMPUTER]
 chipsets = ["ESP32-S3"]
-image.esp32-s3 = "playcomputer/peecee-v1.bin"
+image.esp32-s3 = "playcomputer/playcomputer.bin"
+
+[ROBOKI]
+chipsets = ["ESP32-H2"]
+image.esp32-H2 = "roboki/roboki.bin"
+
+[ZING-0.1]
+chipsets = ["ESP32"]
+image.esp32 = "roboki/roboki.bin"
+
+[ZING]
+chipsets = ["ESP32","ESP32-S3"]
+image.esp32 = "zing/zing-1.0.bin"
+image.esp32s3 = "zing2.0/zing2.0.bin"
+
+[HEXAPOD]
+chipsets = ["ESP32-S3"]
+image.esp32s3 = "hexapod/hexapod.bin"
+
+[4DOF]
+chipsets = ["ESP32-S3"]
+image.esp32-S3 = "4dof_zing/4dof_zing.bin"
+
+[OID_PEN]
+chipsets = ["ESP32-H2"]
+image.esp32-H2 = "oid_pen/oid_pen.bin"
+
+[PLICKER]
+chipsets = ["ESP32-C2"]
+image.esp32-H2 = "plicker/plicker.bin"
+
+[ROBOTIC_ARM]
+chipsets = ["ESP32-S3"]
+image.esp32s3 = "robotic-arm/robotic-arm.bin"
+
+[TOY_ROBOTIC_ARM]
+chipsets = ["ESP32-H2"]
+image.esp32-H2 = "toy-robotic-arm/toy-robotic-arm.bin"
+
+[3D_PRINTER_MB]
+chipsets = ["ESP32-S3"]
+image.esp32-S3 = "3dprinter/3dprinter.bin"
+
+[3D_PRINTER_DISPALY]
+chipsets = ["ESP32-S3"]
+image.esp32-S3 = "3dprinter_disp/3dprinter_disp.bin"
+
