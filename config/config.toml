@@ -15,7 +15,7 @@ image.esp32-H2 = "roboki/roboki.bin"
 
 [ZING-0.1]
 chipsets = ["ESP32"]
-image.esp32 = "roboki/roboki.bin"
+image.esp32 = "zing0.1/zing0.1.bin"
 
 [ZING]
 chipsets = ["ESP32","ESP32-S3"]
