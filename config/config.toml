@@ -19,7 +19,7 @@ image.esp32 = "zing0.1/zing0.1.bin"
 
 [ZING]
 chipsets = ["ESP32","ESP32-S3"]
-image.esp32 = "zing/zing-1.0.bin"
+image.esp32 = "zing/zing.bin"
 image.esp32s3 = "zing2.0/zing2.0.bin"
 
 [HEXAPOD]
