@@ -2,7 +2,7 @@ esp_toml_version = 1.0
 
 firmware_images_url = "https://embedded.plode.org/bins/"
 
-supported_apps = ["TEST-FIRMWARE",PLAYCOMPUTER","ROBOKI","ZING-0.1", "ZING","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "ROBOTIC_ARM", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY"]
+supported_apps = ["TEST-FIRMWARE","PLAYCOMPUTER","ROBOKI","ZING-0.1", "ZING","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "ROBOTIC_ARM", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY"]
 
 [TEST-FIRMWARE]
 chipsets = ["ESP32","ESP32-S3","ESP32-H2","ESP32-C2", "ESP32-C3"]
