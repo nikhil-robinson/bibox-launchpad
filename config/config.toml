@@ -28,8 +28,8 @@ image.esp32-s3 = "zing2.0/zing2.0.bin"
 
 [HEXAPOD]
 chipsets = ["ESP32","ESP32-S3"]
-image.esp32 = "crawlee_1.0/crawlee_1.0.bin"
-image.esp32-s3 = "hexapod/hexapod.bin"
+image.esp32 = "crawlee1.0/crawlee1.0.bin"
+image.esp32-s3 = "crawlee2.0/crawlee2.0.bin"
 
 
 [4DOF]
