@@ -49,7 +49,7 @@ image.esp32-h2 = "plicker/plicker.bin"
 
 [ROBOTIC_ARM]
 chipsets = ["ESP32-S3"]
-image.esp32-s3 = "robotic-arm/robotic-arm.bin"
+image.esp32-s3 = "klaw/klaw.bin"
 
 
 [TOY_ROBOTIC_ARM]
