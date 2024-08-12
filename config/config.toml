@@ -2,7 +2,7 @@ esp_toml_version = 1.0
 
 firmware_images_url = "https://embedded.plode.org/bins/"
 
-supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING0", "ZING1","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "KLAW", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY","TEST", "DS_CALIBRATE", "PEECEE_PRO", "PLAYCOMPUTER_TEST", "AI_MODULE"]
+supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING0", "ZING1","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "KLAW", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY","TEST", "DS_CALIBRATE", "PEECEE_PRO", "PLAYCOMPUTER_TEST", "ROBOKI_TEST", "AI_MODULE"]
 
 [PLAYCOMPUTER]
 chipsets = ["ESP32","ESP32-S3"]
@@ -93,6 +93,12 @@ image.esp32-s3 = "peeceepro/peeceepro.bin"
 [PLAYCOMPUTER_TEST]
 chipsets = ["ESP32-S3"]
 image.esp32-s3 = "playcomputer_test/playcomputer.bin"
+
+
+[ROBOKI_TEST]
+chipsets = ["ESP32-H2"]
+image.esp32-h2 = "roboki_test/roboki.bin"
+
 
 [AI_MODULE]
 chipsets = ["ESP32-S3"]
