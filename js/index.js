@@ -90,6 +90,7 @@ let markdown_payload_url = "";
 let isFlashByDIYMode = false;
 let isFlashByQuickTryMode = false;
 let config_readme_url = "";
+let loader = undefined;
 
 disconnectButton.style.display = "none";
 eraseButton.style.display = "none";
@@ -305,11 +306,12 @@ async function connectToDevice() {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
         });
-        let loader = new chLodar.CH_loader(device);
+        loader = new chLodar.CH_loader(device);
 
         chLodar.CH_loader.openNth(0);
 
         connected = true;
+
         chipDesc = "WCH";
 
         const textarea = document.createElement("textarea");
@@ -612,19 +614,33 @@ programButton.onclick = async () => {
 };
 
 async function downloadAndFlash(fileURL) {
-  let data = await utilities.getImageData(fileURL);
+  let flashFile = $("input[type='radio'][name='chipType']:checked").val();
+  let data = "";
+  if (flashFile === "wchPath/wch1.0.bin") {
+    data = await utilities.getImageData("http://localhost:3000/blink.hex");
+    console.log("XXXXXXX", data);
+  } else {
+    data = await utilities.getImageData(fileURL);
+  }
   try {
     if (data !== undefined) {
       $("#v-pills-console-tab").click();
-      const flashOptions = {
-        fileArray: [{ data: data, address: 0x0000 }],
-        flashSize: "keep",
-        flashMode: undefined,
-        flashFreq: undefined,
-        eraseAll: false,
-        compress: true,
-      };
-      await esploader.writeFlash(flashOptions);
+      if (flashFile === "wchPath/wch1.0.bin") {
+        await loader.flashFirmware({
+          firmware: data,
+          espLoaderTerminal: espLoaderTerminal,
+        });
+      } else {
+        const flashOptions = {
+          fileArray: [{ data: data, address: 0x0000 }],
+          flashSize: "keep",
+          flashMode: undefined,
+          flashFreq: undefined,
+          eraseAll: false,
+          compress: true,
+        };
+        await esploader.writeFlash(flashOptions);
+      }
     }
   } catch (e) {}
 }
@@ -833,7 +849,9 @@ flashButton.onclick = async () => {
 
     buildAppLinks();
     $("#statusModal").click();
-    esploader.status = "started";
+    if (flashFile !== "wchPath/wch1.0.bin") {
+      esploader.status = "started";
+    }
     postFlashDone();
     terminalContainer.classList.remove("fade-in-down");
   } else {

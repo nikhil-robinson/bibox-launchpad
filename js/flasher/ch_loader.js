@@ -12,7 +12,7 @@
 const chipData = {
   name: "CH32X03x Series",
   mcu_type: "0x13",
-  device_type: "0x23",
+  device_type: "0x23", //device_type: "0x23"
   support_net: false,
   support_usb: true,
   support_serial: true,
@@ -134,6 +134,11 @@ const chipData = {
       name: "CH32X035F7P6",
       chip_id: 87,
       flash_size: 49152,
+    },
+    {
+      name: "CH32X035G8R6",
+      chip_id: 146,
+      flash_size: 65536,
     },
   ],
 };
@@ -392,7 +397,6 @@ class UsbTransport {
         }
       }
     }
-    console.log("NNNNNNN", endpointOutFound, endpointInFound);
     if (!(endpointOutFound && endpointInFound)) {
       throw new Error("USB Endpoints not found");
     }
@@ -491,11 +495,6 @@ export class CH_loader extends UsbTransport {
     this.device_type = res.data[1];
     this.chip_id = res.data[0];
     //Display Device Series and Chip
-    console.log(
-      "BBBBBBBB",
-      chipData.device_type,
-      this.device_type.toString(16)
-    );
     if (chipData.device_type == "0x" + this.device_type.toString(16)) {
       // CH_loader.debugLog("Device Series : " + chipData.name);
 
@@ -508,6 +507,10 @@ export class CH_loader extends UsbTransport {
         // CH_loader.debugLog(
         //   "Flash Size : " + variant.flash_size / 1024 + " KiB"
         // );
+        espLoaderTerminal.writeLine("Chip : " + variant.name);
+        espLoaderTerminal.writeLine(
+          "Flash Size : " + variant.flash_size / 1024 + " KiB"
+        );
       }
     });
     //Read Config
@@ -523,6 +526,9 @@ export class CH_loader extends UsbTransport {
     this.code_flash_protected =
       this.supportCodeFlashProtect() && res2.data[2] != 0xa5;
     // CH_loader.debugLog("Code Flash Protected : " + this.code_flash_protected);
+    espLoaderTerminal.writeLine(
+      "Code Flash Protected : " + this.code_flash_protected
+    );
     //get the bootloader version
     this.btver.set(res2.data.slice(14, 18));
     // CH_loader.debugLog(
@@ -535,6 +541,16 @@ export class CH_loader extends UsbTransport {
     //     "" +
     //     this.btver[3]
     // );
+    espLoaderTerminal.writeLine(
+      "Bootloader Version (BTVER) : " +
+        this.btver[0] +
+        "" +
+        this.btver[1] +
+        "." +
+        this.btver[2] +
+        "" +
+        this.btver[3]
+    );
     //get the chip UID
     this.chip_uid.set(res2.data.slice(18));
     // CH_loader.debugLog(
@@ -543,10 +559,16 @@ export class CH_loader extends UsbTransport {
     //       .map((x) => x.toString(16).padStart(2, "0").toUpperCase())
     //       .join("-")
     // );
+    espLoaderTerminal.writeLine(
+      "Chip UID : " +
+        Array.from(this.chip_uid)
+          .map((x) => x.toString(16).padStart(2, "0").toUpperCase())
+          .join("-")
+    );
     //get the user config byte
-    this.dumpInfo(res2);
+    this.dumpInfo({ res: res2, espLoaderTerminal: espLoaderTerminal });
   }
-  async dumpInfo(res) {
+  async dumpInfo({ res, espLoaderTerminal }) {
     const raw = res.data.slice(2);
     chipData.config_registers.forEach((config) => {
       let n = new DataView(
@@ -555,6 +577,7 @@ export class CH_loader extends UsbTransport {
         4
       ).getUint32(0, true);
       // CH_loader.debugLog(config.name + " : 0x" + n.toString(16));
+      espLoaderTerminal.writeLine(config.name + " : 0x" + n.toString(16));
       if (config.fields) {
         config.fields.forEach((fieldDef) => {
           let bitWidth = fieldDef.bit_range[0] - fieldDef.bit_range[1] + 1;
@@ -564,10 +587,16 @@ export class CH_loader extends UsbTransport {
           //     fieldDef.name
           //   }  0x${b.toString(16)} (0b${b.toString(2)})`
           // );
+          espLoaderTerminal.writeLine(
+            `[${fieldDef.bit_range[0]}, ${fieldDef.bit_range[1]}] ${
+              fieldDef.name
+            }  0x${b.toString(16)} (0b${b.toString(2)})`
+          );
           if ("explaination" in fieldDef && fieldDef.explaination) {
             for (const [key, value] of Object.entries(fieldDef.explaination)) {
               if (b == Number(key)) {
                 // CH_loader.debugLog(` - ${value}`);
+                espLoaderTerminal.writeLine(` - ${value}`);
               }
             }
           }
@@ -575,7 +604,7 @@ export class CH_loader extends UsbTransport {
       }
     });
   }
-  async eraseFlash(flash_size = this.flash_size) {
+  async eraseFlash({ flash_size = this.flash_size, espLoaderTerminal }) {
     if (!this.flash_size) {
       await this.findDevice();
       flash_size = this.flash_size;
@@ -586,7 +615,10 @@ export class CH_loader extends UsbTransport {
     const minSectors = this.minEraseSectorNumber();
     if (sectors < minSectors) {
       sectors = minSectors;
-      CH_loader.debugLog(
+      // CH_loader.debugLog(
+      //   `erase_code: set min number of erased sectors to ${sectors}`
+      // );
+      espLoaderTerminal.writeLine(
         `erase_code: set min number of erased sectors to ${sectors}`
       );
     }
@@ -597,9 +629,10 @@ export class CH_loader extends UsbTransport {
     const res = await this.recv();
     console.log(res);
     if (res.type == "Err") throw new Error("Error in erasing flash");
-    else CH_loader.debugLog(`Erased ${sectors} code flash sectors`);
+    else espLoaderTerminal.writeLine(`Erased ${sectors} code flash sectors`);
+    // else CH_loader.debugLog(`Erased ${sectors} code flash sectors`);
   }
-  async flashChunk(address, raw, key) {
+  async flashChunk({ address, raw, key, espLoaderTerminal }) {
     // XOR the raw data with the key
     const xored = raw.map((value, index) => value ^ key[index % 8]);
     const padding = Math.floor(Math.random() * 256);
@@ -617,7 +650,10 @@ export class CH_loader extends UsbTransport {
         `Program 0x${address.toString(16).padStart(8, "0")} failed`
       );
     }
-    CH_loader.debugLog("Programmed 0x" + address.toString(16).padStart(8, "0"));
+    // CH_loader.debugLog("Programmed 0x" + address.toString(16).padStart(8, "0"));
+    espLoaderTerminal.writeLine(
+      "Programmed 0x" + address.toString(16).padStart(8, "0")
+    );
   }
   intelHexToUint8Array(hexString) {
     const lines = hexString.trim().split("\n");
@@ -636,33 +672,53 @@ export class CH_loader extends UsbTransport {
 
     return new Uint8Array(data);
   }
-  async flashFirmware(firmware) {
-    const raw = this.intelHexToUint8Array(firmware);
-    const sectors = raw.length / this.SECTOR_SIZE + 1;
-    if (!this.chip_id && !this.chip_uid) await this.findDevice();
-    await this.eraseFlash(sectors);
-    const key = this.xorKey();
-    const keyChecksum = key.reduce((acc, x) => (acc + x) & 0xff, 0);
-    console.log("key ", key, keyChecksum);
-    const command1 = {
-      type: "IspKey",
-      key: new Uint8Array(0x1e),
-    };
-    const sendData1 = await this.protocol.ntoRaw(command1);
-    this.sendRaw(sendData1);
-    const res = await this.recv();
-    if (res.type == "Err") throw new Error("isp_key failede");
-    if (res.data[0] != keyChecksum) throw new Error("isp_key checksum failed");
-    console.log("res data", res.data);
-    const CHUNK = 56;
-    let address = 0x0;
-    for (let i = 0; i < raw.length; i += CHUNK) {
-      const chunk = raw.subarray(i, i + CHUNK);
-      await this.flashChunk(address, chunk, key);
-      address += chunk.length;
+  async flashFirmware({ firmware, espLoaderTerminal }) {
+    try {
+      const raw = this.intelHexToUint8Array(firmware);
+      const sectors = raw.length / this.SECTOR_SIZE + 1;
+      if (!this.chip_id && !this.chip_uid) await this.findDevice();
+
+      await this.eraseFlash({
+        flash_size: sectors,
+        espLoaderTerminal: espLoaderTerminal,
+      });
+      const key = this.xorKey();
+      const keyChecksum = key.reduce((acc, x) => (acc + x) & 0xff, 0);
+      console.log("key ", key, keyChecksum);
+      const command1 = {
+        type: "IspKey",
+        key: new Uint8Array(0x1e),
+      };
+      const sendData1 = await this.protocol.ntoRaw(command1);
+      this.sendRaw(sendData1);
+      const res = await this.recv();
+      if (res.type == "Err") throw new Error("isp_key failede");
+      if (res.data[0] != keyChecksum)
+        throw new Error("isp_key checksum failed");
+      console.log("res data", res.data);
+      const CHUNK = 56;
+      let address = 0x0;
+      for (let i = 0; i < raw.length; i += CHUNK) {
+        const chunk = raw.subarray(i, i + CHUNK);
+        await this.flashChunk({
+          address: address,
+          raw: chunk,
+          key: key,
+          espLoaderTerminal: espLoaderTerminal,
+        });
+        address += chunk.length;
+      }
+      await this.flashChunk({
+        address: address,
+        raw: new Uint8Array(),
+        key: key,
+        espLoaderTerminal: espLoaderTerminal,
+      });
+      // CH_loader.debugLog("firmware flashed");
+      espLoaderTerminal.writeLine("firmware flashed");
+    } catch (e) {
+      console.log("ERROR", e);
     }
-    await this.flashChunk(address, new Uint8Array(), key);
-    CH_loader.debugLog("firmware flashed");
   }
   async reset() {
     const command = { type: "IspEnd", reason: 1 };
