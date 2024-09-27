@@ -41,6 +41,12 @@ const appConfigInfo = document.getElementById("appConfigInfo");
 const progressMsgContainerQS = document.getElementById(
   "progressMsgContainerQS"
 );
+const windowHelp_Connect = document.getElementById("windowHelp_Connect");
+const offset1_flashAddress_input = document.getElementById("offset1");
+const addFile_button = document.getElementById("addFile");
+
+//when load the js file initial windowHelp_Connect it is not display offset1
+windowHelp_Connect.style.display = "none";
 
 let resizeTimeout = false;
 
@@ -211,6 +217,23 @@ function populateDeviceTypes(imageConfig) {
     });
 }*/
 
+/*
+set the wch board property when its selected
+show the help text for window user flash the wch board,
+disable the add file button and disable the flash address input
+*/
+function setWCH_board_UI_Property(deviceConfig) {
+  if (deviceTypeSelect.value === "WCH_BOARD") {
+    windowHelp_Connect.style.display = "block";
+    offset1_flashAddress_input.disabled = true;
+    addFile_button.disabled = true;
+  } else {
+    windowHelp_Connect.style.display = "none";
+    offset1_flashAddress_input.disabled = false;
+    addFile_button.disabled = false;
+  }
+}
+
 function populateSupportedChipsets(deviceConfig) {
   chipSetsRadioGroup.innerHTML = "";
   const supportedChipSets = deviceConfig["chipsets"];
@@ -264,6 +287,7 @@ $("#frameworkSel").on("change", function () {
 });
 
 $("#device").on("change", function () {
+  setWCH_board_UI_Property(config[deviceTypeSelect.value]);
   populateSupportedChipsets(config[deviceTypeSelect.value]);
   setAppURLs(config[deviceTypeSelect.value]);
   if (config[deviceTypeSelect.value].readme?.text) {
@@ -451,7 +475,11 @@ eraseButton.onclick = async () => {
   terminalContainer.classList.remove("fade-in-down");
   eraseButton.disabled = true;
   $("#v-pills-console-tab").click();
-  await esploader.eraseFlash();
+  if (deviceTypeSelect.value === "WCH_BOARD") {
+    await loader.eraseFlash({ espLoaderTerminal: espLoaderTerminal });
+  } else {
+    await esploader.eraseFlash();
+  }
   postFlashDone();
   eraseButton.disabled = false;
 };
@@ -585,10 +613,13 @@ function validate_program_inputs() {
     offset = parseInt(offSetObj.value);
 
     // Non-numeric or blank offset
-    if (Number.isNaN(offset))
+    if (Number.isNaN(offset) && deviceTypeSelect.value !== "WCH_BOARD")
       return "Offset field in row " + index + " is not a valid address!";
     // Repeated offset used
-    else if (offsetArr.includes(offset))
+    else if (
+      offsetArr.includes(offset) &&
+      deviceTypeSelect.value !== "WCH_BOARD"
+    )
       return "Offset field in row " + index + " is already in use!";
     else offsetArr.push(offset);
 
@@ -633,18 +664,27 @@ programButton.onclick = async () => {
   isFlashByQuickTryMode = false;
   $("#v-pills-console-tab").click();
   try {
-    const flashOptions = {
-      fileArray: fileArr,
-      flashSize: "keep",
-      flashMode: undefined,
-      flashFreq: undefined,
-      eraseAll: false,
-      compress: true,
-    };
-    await esploader.writeFlash(flashOptions);
+    if (deviceTypeSelect.value === "WCH_BOARD") {
+      await loader.flashFirmware({
+        firmware: fileArr[0].data,
+        espLoaderTerminal: espLoaderTerminal,
+      });
+    } else {
+      const flashOptions = {
+        fileArray: fileArr,
+        flashSize: "keep",
+        flashMode: undefined,
+        flashFreq: undefined,
+        eraseAll: false,
+        compress: true,
+      };
+      await esploader.writeFlash(flashOptions);
+    }
     postFlashDone();
     terminalContainer.classList.remove("fade-in-down");
-  } catch (e) {}
+  } catch (e) {
+    console.log("ERROR", e);
+  }
 };
 
 async function downloadAndFlash(fileURL) {

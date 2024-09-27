@@ -942,6 +942,7 @@ export class CH_loader extends UsbTransport {
     });
   }
   async eraseFlash({ flash_size = this.flash_size, espLoaderTerminal }) {
+    espLoaderTerminal.writeLine(`Flashing Start.....`);
     if (!this.flash_size) {
       await this.findDevice();
       flash_size = this.flash_size;
@@ -967,6 +968,8 @@ export class CH_loader extends UsbTransport {
     console.log(res);
     if (res.type == "Err") throw new Error("Error in erasing flash");
     else espLoaderTerminal.writeLine(`Erased ${sectors} code flash sectors`);
+
+    espLoaderTerminal.writeLine(`Flashing Completed.....`);
     // else CH_loader.debugLog(`Erased ${sectors} code flash sectors`);
   }
   async flashChunk({ address, raw, key, espLoaderTerminal }) {
