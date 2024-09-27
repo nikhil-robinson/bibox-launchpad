@@ -9,10 +9,299 @@
 
 // import * as protocolFile from "./protocol_handler";
 
-const chipData = {
+// const chipData = {
+//   name: "CH32X03x Series",
+//   mcu_type: "0x13",
+//   device_type: "0x23", //device_type: "0x23"
+//   support_net: false,
+//   support_usb: true,
+//   support_serial: true,
+//   description: "CH32X03x RISC-V4C Series",
+//   config_registers: [
+//     {
+//       offset: "0x00",
+//       name: "RDPR_USER",
+//       description: "RDPR, nRDPR, USER, nUSER",
+//       reset: "0xFFFF5AA5",
+//       fields: [
+//         {
+//           bit_range: [7, 0],
+//           name: "RDPR",
+//           description:
+//             "Read Protection. 0xA5 for unprotected, otherwise read-protected(ignoring WRP)",
+//           explaination: {
+//             "0xa5": "Unprotected",
+//             _: "Protected",
+//           },
+//         },
+//         {
+//           bit_range: [16, 16],
+//           name: "IWDG_SW",
+//           description: "Independent watchdog (IWDG) hardware enable",
+//           explaination: {
+//             1: "IWDG enabled by the software, and disabled by hardware",
+//             0: "IWDG enabled by the software (decided along with the LSI clock)",
+//           },
+//         },
+//         {
+//           bit_range: [17, 17],
+//           name: "STOP_RST",
+//           description: "System reset control under the stop mode",
+//           explaination: {
+//             1: "Disable",
+//             0: "Enable",
+//           },
+//         },
+//         {
+//           bit_range: [18, 18],
+//           name: "STANDBY_RST",
+//           description:
+//             "System reset control under the standby mode, STANDY_RST",
+//           explaination: {
+//             1: "Disable, entering standby-mode without RST",
+//             0: "Enable",
+//           },
+//         },
+//         {
+//           bit_range: [20, 19],
+//           name: "RST_MOD",
+//           description: "Reset mode",
+//           explaination: {
+//             "0b00": "Enable RST alternative function",
+//             "0b11":
+//               "Disable RST alternative function, use PA21/PC3/PB7 as GPIO",
+//             _: "Error",
+//           },
+//         },
+//       ],
+//     },
+//     {
+//       offset: "0x04",
+//       name: "DATA",
+//       description: "Customizable 2 byte data, DATA0, nDATA0, DATA1, nDATA1",
+//       reset: "0xFF00FF00",
+//       type: "u32",
+//       fields: [
+//         {
+//           bit_range: [7, 0],
+//           name: "DATA0",
+//         },
+//         {
+//           bit_range: [23, 16],
+//           name: "DATA1",
+//         },
+//       ],
+//     },
+//     {
+//       offset: "0x08",
+//       name: "WRP",
+//       description: "Flash memory write protection status",
+//       type: "u32",
+//       reset: "0xFFFFFFFF",
+//       explaination: {
+//         "0xFFFFFFFF": "Unprotected",
+//         _: "Some 4K sections are protected",
+//       },
+//     },
+//   ],
+//   variants: [
+//     {
+//       name: "CH32X035R8T6",
+//       chip_id: 80,
+//       flash_size: 65536,
+//     },
+//     {
+//       name: "CH32X035C8T6",
+//       chip_id: 81,
+//       flash_size: 65536,
+//     },
+//     {
+//       name: "CH32X035F8U6",
+//       chip_id: 94,
+//       flash_size: 65536,
+//     },
+//     {
+//       name: "CH32X035G8U6",
+//       chip_id: 86,
+//       flash_size: 65536,
+//     },
+//     {
+//       name: "CH32X035G8R6",
+//       chip_id: 91,
+//       flash_size: 65536,
+//     },
+//     {
+//       name: "CH32X035F7P6",
+//       chip_id: 87,
+//       flash_size: 49152,
+//     },
+//     // {
+//     //   name: "CH32X035G8R6",
+//     //   chip_id: 146,
+//     //   flash_size: 65536,
+//     // },
+//   ],
+// };
+/////////////// chip data////////////////////////////////
+const chipData_0x21 = {
+  name: "CH32V00x Series",
+  mcu_type: "0x11",
+  device_type: "0x21",
+  support_net: false,
+  support_usb: false,
+  support_serial: true,
+  description: "CH32V00x (RISC-V2A) Series",
+  config_registers: [],
+  variants: [
+    {
+      name: "CH32V003*4*6",
+      chip_id: 51,
+      alt_chip_ids: [50, 49, 48],
+      flash_size: 16384,
+    },
+  ],
+};
+
+const chipData_0x22 = {
+  name: "CH59x Series",
+  mcu_type: "0x12",
+  device_type: "0x22",
+  support_usb: true,
+  support_serial: true,
+  support_net: false,
+  description: "CH59x (RISC-V4C BLE 5.4) Series",
+  config_registers: [
+    {
+      offset: "0x00",
+      name: "RESERVED",
+      description: "Reserved 32-bit word",
+      reset: "0xFFFFFFFF",
+      type: "u32",
+    },
+    {
+      offset: "0x04",
+      name: "WPROTECT",
+      reset: "0xFFFFFFFF",
+      type: "u32",
+      fields: [
+        {
+          bit_range: [0, 0],
+          name: "NO_KEY_SERIAL_DOWNLOAD",
+          description: "Turn on No-key serial port download",
+          explaination: {
+            1: "Enable",
+            0: "Disable",
+          },
+        },
+        {
+          bit_range: [1, 1],
+          name: "DOWNLOAD_CFG",
+          explaination: {
+            1: "PB22 (Default set)",
+            0: "PB11",
+          },
+        },
+      ],
+    },
+    {
+      offset: "0x08",
+      name: "USER_CFG",
+      description: "User config register",
+      reset: "0x4FFF0FD5",
+      type: "u32",
+      fields: [
+        {
+          bit_range: [2, 0],
+          name: "RESERVED",
+          explaination: {
+            "0b101": "Default",
+            _: "Error",
+          },
+        },
+        {
+          bit_range: [3, 3],
+          name: "CFG_RESET_EN",
+          description: "RST# external manual reset input pin enable",
+          explaination: {
+            0: "Disable",
+            1: "Enable",
+          },
+        },
+        {
+          bit_range: [4, 4],
+          name: "CFG_DEBUG_EN",
+          description: "Two-wire simulation debug interface SWD enable",
+          explaination: {
+            0: "Disable",
+            1: "Enable",
+          },
+        },
+        {
+          bit_range: [5, 5],
+          name: "RESERVED",
+          explaination: {
+            0: "Default",
+            _: "Error",
+          },
+        },
+        {
+          bit_range: [6, 6],
+          name: "CFG_BOOT_EN",
+          description: "Bootloader enable",
+          explaination: {
+            0: "Disable",
+            1: "Enable",
+          },
+        },
+        {
+          bit_range: [7, 7],
+          name: "CFG_ROM_READ",
+          description: "Code and data protection mode in FlashROM",
+          explaination: {
+            0: "Disable the programmer to read out, and keep the program secret",
+            1: "Read enable",
+          },
+        },
+        {
+          bit_range: [27, 8],
+          name: "RESERVED",
+          explaination: {
+            "0xFF0F": "Default",
+            _: "Error",
+          },
+        },
+        {
+          bit_range: [31, 28],
+          name: "VALID_SIG",
+          description: "Configuration information valid flag, fixed value",
+          explaination: {
+            "0b0100": "Valid",
+            _: "Error",
+          },
+        },
+      ],
+    },
+  ],
+  variants: [
+    {
+      name: "CH591",
+      chip_id: 145,
+      flash_size: 196608,
+      eeprom_size: 32768,
+    },
+    {
+      name: "CH592",
+      chip_id: 146,
+      flash_size: 458752,
+      eeprom_size: 32768,
+    },
+  ],
+};
+
+const chipData_0x23 = {
   name: "CH32X03x Series",
   mcu_type: "0x13",
-  device_type: "0x23", //device_type: "0x23"
+  device_type: "0x23",
   support_net: false,
   support_usb: true,
   support_serial: true,
@@ -135,13 +424,28 @@ const chipData = {
       chip_id: 87,
       flash_size: 49152,
     },
+  ],
+};
+
+const chipData_0x24 = {
+  name: "CH643 Series",
+  mcu_type: "0x14",
+  device_type: "0x24",
+  support_net: false,
+  support_usb: true,
+  support_serial: true,
+  description: "CH643 RISC-V4C RGB Display Driver Series",
+  variants: [
     {
-      name: "CH32X035G8R6",
-      chip_id: 146,
-      flash_size: 65536,
+      name: "CH643",
+      chip_id: 48,
+      alt_chip_ids: ["ALL"],
+      flash_size: 63488,
     },
   ],
 };
+
+/////////////// chip data////////////////////////////////
 
 class Protocol {
   IDENTIFY = 0xa1;
@@ -409,6 +713,12 @@ class UsbTransport {
     return this.openNth(0);
   }
 
+  static async closeAny() {
+    const devices = await navigator.usb.getDevices();
+    const device = devices[0];
+    device.close();
+  }
+
   async sendRaw(raw) {
     await this.device.transferOut(UsbTransport.ENDPOINT_OUT, raw);
   }
@@ -494,6 +804,28 @@ export class CH_loader extends UsbTransport {
     if (res.type == "Err") throw new Error("Error in finding device");
     this.device_type = res.data[1];
     this.chip_id = res.data[0];
+
+    /* The commented out switch statement in the `findDevice` method is attempting to determine the
+  appropriate `chipData` based on the `device_type` obtained during the device identification
+  process. */
+    let chipData;
+    switch (this.device_type) {
+      case 0x21:
+        chipData = chipData_0x21;
+        break;
+      case 0x22:
+        chipData = chipData_0x22;
+        break;
+      case 0x23:
+        chipData = chipData_0x23;
+        break;
+      case 0x24:
+        chipData = chipData_0x24;
+        break;
+      default:
+        throw new Error("Device not supported");
+    }
+
     //Display Device Series and Chip
     if (chipData.device_type == "0x" + this.device_type.toString(16)) {
       // CH_loader.debugLog("Device Series : " + chipData.name);
@@ -566,10 +898,15 @@ export class CH_loader extends UsbTransport {
           .join("-")
     );
     //get the user config byte
-    this.dumpInfo({ res: res2, espLoaderTerminal: espLoaderTerminal });
+    this.dumpInfo({
+      res: res2,
+      espLoaderTerminal: espLoaderTerminal,
+      chipData: chipData,
+    });
   }
-  async dumpInfo({ res, espLoaderTerminal }) {
+  async dumpInfo({ res, espLoaderTerminal, chipData }) {
     const raw = res.data.slice(2);
+    if (!chipData.config_registers) return;
     chipData.config_registers.forEach((config) => {
       let n = new DataView(
         raw.buffer,
@@ -720,12 +1057,18 @@ export class CH_loader extends UsbTransport {
       console.log("ERROR", e);
     }
   }
-  async reset() {
-    const command = { type: "IspEnd", reason: 1 };
-    const sendData = await this.protocol.ntoRaw(command);
-    this.sendRaw(sendData);
-    const res = await this.recv();
-    if (res.type == "Err") throw new Error("Error in reset");
-    CH_loader.debugLog("Device Reset");
+  async reset({ espLoaderTerminal }) {
+    try {
+      espLoaderTerminal.writeLine("Device Reset start......");
+      const command = { type: "IspEnd", reason: 1 };
+      const sendData = await this.protocol.ntoRaw(command);
+      this.sendRaw(sendData);
+      const res = await this.recv();
+      if (res.type == "Err") throw new Error("Error in reset");
+      // CH_loader.debugLog("Device Reset");
+      espLoaderTerminal.writeLine("Device Reset");
+    } catch (e) {
+      console.log("ERROR", e);
+    }
   }
 }

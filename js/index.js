@@ -314,7 +314,6 @@ async function connectToDevice() {
 
         chipDesc = "WCH";
 
-        const textarea = document.createElement("textarea");
         await new Promise((resolve) => setTimeout(resolve, 500));
 
         await loader.findDevice({ espLoaderTerminal: espLoaderTerminal });
@@ -390,50 +389,60 @@ connectButton.onclick = async () => {
 };
 
 resetButton.onclick = async () => {
+  let flashFile = $("input[type='radio'][name='chipType']:checked").val();
   let consoleBaudrate;
 
   postFlashClick();
   consoleStartButton.disabled = false;
   $("#closeResetModal").click();
-  if (transport) {
-    if (reader !== undefined) {
-      reader.releaseLock();
-    }
-    if (device) {
-      await device.close();
-    }
-  }
-  if (isFlashByQuickTryMode || isFlashByDIYMode) {
-    // Handle the case of resetting the device after flashing through one of the two modes.
-    consoleBaudrate =
-      isFlashByQuickTryMode && consoleBaudrateFromToml
-        ? consoleBaudrateFromToml
-        : parseInt(consoleBaudrateSelect.value);
-  } else {
-    consoleBaudrate = parseInt(consoleBaudrateSelect.value); // Handle the case of resetting the device without flashing through any mode.
-  }
-  await transport.connect(consoleBaudrate);
-  await transport.setDTR(false);
-  await new Promise((resolve) => setTimeout(resolve, 100));
-  await transport.setDTR(true);
-  while (device.readable) {
-    if (!device.readable.locked) {
-      reader = device.readable.getReader();
-    }
 
+  if (flashFile == "wchPath/wch1.0.bin") {
     try {
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) {
-          // Allow the serial port to be closed later.
-          reader.releaseLock();
-          break;
-        }
-        if (value) {
-          term.write(value);
-        }
+      await loader.reset({ espLoaderTerminal: espLoaderTerminal });
+    } catch (e) {
+      console.log("ERROR", e);
+    }
+  } else {
+    if (transport) {
+      if (reader !== undefined) {
+        reader.releaseLock();
       }
-    } catch (error) {}
+      if (device) {
+        await device.close();
+      }
+    }
+    if (isFlashByQuickTryMode || isFlashByDIYMode) {
+      // Handle the case of resetting the device after flashing through one of the two modes.
+      consoleBaudrate =
+        isFlashByQuickTryMode && consoleBaudrateFromToml
+          ? consoleBaudrateFromToml
+          : parseInt(consoleBaudrateSelect.value);
+    } else {
+      consoleBaudrate = parseInt(consoleBaudrateSelect.value); // Handle the case of resetting the device without flashing through any mode.
+    }
+    await transport.connect(consoleBaudrate);
+    await transport.setDTR(false);
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    await transport.setDTR(true);
+    while (device.readable) {
+      if (!device.readable.locked) {
+        reader = device.readable.getReader();
+      }
+
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) {
+            // Allow the serial port to be closed later.
+            reader.releaseLock();
+            break;
+          }
+          if (value) {
+            term.write(value);
+          }
+        }
+      } catch (error) {}
+    }
   }
 };
 
@@ -493,6 +502,9 @@ function cleanUp() {
 }
 
 disconnectButton.onclick = async () => {
+  if (loader) {
+    chLodar.CH_loader.closeAny();
+  }
   if (transport) {
     if (reader !== undefined) {
       reader.releaseLock();
@@ -526,11 +538,33 @@ disconnectButton.onclick = async () => {
 };
 
 consoleStartButton.onclick = async () => {
+  let flashFile = $("input[type='radio'][name='chipType']:checked").val();
   if (device === null) {
-    device = await navigator.serial.requestPort({
-      filters: utilities.usbPortFilters,
-    });
-    transport = new Transport(device);
+    if (flashFile == "wchPath/wch1.0.bin") {
+      try {
+        device = await navigator.usb.requestDevice({
+          filters: utilities.usb_Port_Filters,
+        });
+        loader = new chLodar.CH_loader(device);
+
+        chLodar.CH_loader.openNth(0);
+
+        connected = true;
+
+        chipDesc = "WCH";
+        await new Promise((resolve) => setTimeout(resolve, 500));
+
+        await loader.findDevice({ espLoaderTerminal: espLoaderTerminal });
+        // chLodar.CH_loader.debugLog("Connected");
+      } catch (e) {
+        console.log("ERROR", e);
+      }
+    } else {
+      device = await navigator.serial.requestPort({
+        filters: utilities.usbPortFilters,
+      });
+      transport = new Transport(device);
+    }
   }
   $("#resetConfirmation").click();
 };
