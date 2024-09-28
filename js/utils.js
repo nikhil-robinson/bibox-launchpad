@@ -1,3 +1,4 @@
+//this filter array used for ESP chipset board
 export const usbPortFilters = [
   { usbVendorId: 0x10c4, usbProductId: 0xea60 } /* CP2102/CP2102N */,
   { usbVendorId: 0x0403, usbProductId: 0x6010 } /* FT2232H */,
@@ -13,6 +14,7 @@ export const usbPortFilters = [
   { usbVendorId: 0x0403, usbProductId: 0x6001 } /* FT232R */,
 ];
 
+//this filter array used for WCH chipset board
 export const usb_Port_Filters = [
   { vendorId: 0x4348, productId: 0x55e0 }, //wch board
   { vendorId: 0x1a86, productId: 0x55e0 },
