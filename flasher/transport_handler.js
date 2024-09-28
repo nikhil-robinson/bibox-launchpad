@@ -13,15 +13,17 @@ export class UsbTransport {
   constructor(device) {
     this.device = device;
   }
-  static debugLog(message) {
-    const consoleTextarea = document.querySelector("#console");
-    consoleTextarea.value += message + "\n";
-    consoleTextarea.scrollTop = consoleTextarea.scrollHeight;
-  }
-  static clearLog() {
-    const consoleTextarea = document.querySelector("#console");
-    consoleTextarea.value = "";
-  }
+  // static debugLog(message: string) {
+  //   const consoleTextarea =
+  //     document.querySelector<HTMLTextAreaElement>("#console")!;
+  //   consoleTextarea.value += message + "\n";
+  //   consoleTextarea.scrollTop = consoleTextarea.scrollHeight;
+  // }
+  // static clearLog() {
+  //   const consoleTextarea =
+  //     document.querySelector<HTMLTextAreaElement>("#console")!;
+  //   consoleTextarea.value = "";
+  // }
   static async scanDevices() {
     const filters = [
       { vendorId: 0x4348, productId: 0x55e0 },
@@ -77,6 +79,11 @@ export class UsbTransport {
   }
   static async openAny() {
     return this.openNth(0);
+  }
+  static async closeAny() {
+    const devices = await navigator.usb.getDevices();
+    const device = devices[0];
+    device.close();
   }
   async sendRaw(raw) {
     await this.device.transferOut(UsbTransport.ENDPOINT_OUT, raw);

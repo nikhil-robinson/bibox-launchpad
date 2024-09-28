@@ -331,7 +331,7 @@ async function connectToDevice() {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
         });
-        loader = new chLodar.CH_loader(device);
+        loader = new chLodar.CH_loader(device, espLoaderTerminal);
 
         chLodar.CH_loader.openNth(0);
 
@@ -341,7 +341,7 @@ async function connectToDevice() {
 
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        await loader.findDevice({ espLoaderTerminal: espLoaderTerminal });
+        await loader.findDevice();
         // chLodar.CH_loader.debugLog("Connected");
       } catch (e) {
         console.log("ERROR", e);
@@ -423,7 +423,7 @@ resetButton.onclick = async () => {
 
   if (flashFile == "wchPath/wch1.0.bin") {
     try {
-      await loader.reset({ espLoaderTerminal: espLoaderTerminal });
+      await loader.reset();
     } catch (e) {
       console.log("ERROR", e);
     }
@@ -477,7 +477,7 @@ eraseButton.onclick = async () => {
   eraseButton.disabled = true;
   $("#v-pills-console-tab").click();
   if (deviceTypeSelect.value === "WCH_BOARD") {
-    await loader.eraseFlash({ espLoaderTerminal: espLoaderTerminal });
+    await loader.eraseFlash();
   } else {
     await esploader.eraseFlash();
   }
@@ -574,7 +574,7 @@ consoleStartButton.onclick = async () => {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
         });
-        loader = new chLodar.CH_loader(device);
+        loader = new chLodar.CH_loader(device, espLoaderTerminal);
 
         chLodar.CH_loader.openNth(0);
 
@@ -583,7 +583,7 @@ consoleStartButton.onclick = async () => {
         chipDesc = "WCH";
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        await loader.findDevice({ espLoaderTerminal: espLoaderTerminal });
+        await loader.findDevice();
         // chLodar.CH_loader.debugLog("Connected");
       } catch (e) {
         console.log("ERROR", e);
@@ -666,10 +666,7 @@ programButton.onclick = async () => {
   $("#v-pills-console-tab").click();
   try {
     if (deviceTypeSelect.value === "WCH_BOARD") {
-      await loader.flashFirmware({
-        firmware: fileArr[0].data,
-        espLoaderTerminal: espLoaderTerminal,
-      });
+      await loader.flashFirmware(fileArr[0].data);
     } else {
       const flashOptions = {
         fileArray: fileArr,
@@ -701,10 +698,7 @@ async function downloadAndFlash(fileURL) {
     if (data !== undefined) {
       $("#v-pills-console-tab").click();
       if (flashFile === "wchPath/wch1.0.bin") {
-        await loader.flashFirmware({
-          firmware: data,
-          espLoaderTerminal: espLoaderTerminal,
-        });
+        await loader.flashFirmware(data);
       } else {
         const flashOptions = {
           fileArray: [{ data: data, address: 0x0000 }],
