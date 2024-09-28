@@ -224,13 +224,15 @@ show the help text for window user flash the wch board,
 disable the add file button and disable the flash address input
 */
 function setWCH_board_UI_Property(deviceConfig) {
-  if (deviceTypeSelect.value === "WCH_BOARD") {
+  if (config[deviceTypeSelect.value].chipType == "WCH") {
     windowHelp_Connect.style.display = "block";
     offset1_flashAddress_input.disabled = true;
+    offset1_flashAddress_input.value = "0";
     addFile_button.disabled = true;
   } else {
     windowHelp_Connect.style.display = "none";
     offset1_flashAddress_input.disabled = false;
+    offset1_flashAddress_input.value = "0x1000";
     addFile_button.disabled = false;
   }
 }
@@ -326,7 +328,7 @@ async function connectToDevice() {
   let flashFile = $("input[type='radio'][name='chipType']:checked").val();
 
   if (device === null) {
-    if (flashFile == "wchPath/wch1.0.bin") {
+    if (config[deviceTypeSelect.value].chipType == "WCH") {
       try {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
@@ -339,7 +341,7 @@ async function connectToDevice() {
 
         chipDesc = "WCH";
 
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         await loader.findDevice();
         // chLodar.CH_loader.debugLog("Connected");
@@ -414,14 +416,13 @@ connectButton.onclick = async () => {
 };
 
 resetButton.onclick = async () => {
-  let flashFile = $("input[type='radio'][name='chipType']:checked").val();
   let consoleBaudrate;
 
   postFlashClick();
   consoleStartButton.disabled = false;
   $("#closeResetModal").click();
 
-  if (flashFile == "wchPath/wch1.0.bin") {
+  if (config[deviceTypeSelect.value].chipType == "WCH") {
     try {
       await loader.reset();
     } catch (e) {
@@ -476,7 +477,7 @@ eraseButton.onclick = async () => {
   terminalContainer.classList.remove("fade-in-down");
   eraseButton.disabled = true;
   $("#v-pills-console-tab").click();
-  if (deviceTypeSelect.value === "WCH_BOARD") {
+  if (config[deviceTypeSelect.value].chipType == "WCH") {
     await loader.eraseFlash();
   } else {
     await esploader.eraseFlash();
@@ -567,9 +568,8 @@ disconnectButton.onclick = async () => {
 };
 
 consoleStartButton.onclick = async () => {
-  let flashFile = $("input[type='radio'][name='chipType']:checked").val();
   if (device === null) {
-    if (flashFile == "wchPath/wch1.0.bin") {
+    if (config[deviceTypeSelect.value].chipType == "WCH") {
       try {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
@@ -581,7 +581,7 @@ consoleStartButton.onclick = async () => {
         connected = true;
 
         chipDesc = "WCH";
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
         await loader.findDevice();
         // chLodar.CH_loader.debugLog("Connected");
@@ -614,19 +614,29 @@ function validate_program_inputs() {
     offset = parseInt(offSetObj.value);
 
     // Non-numeric or blank offset
-    if (Number.isNaN(offset) && deviceTypeSelect.value !== "WCH_BOARD")
+    if (
+      Number.isNaN(offset) &&
+      config[deviceTypeSelect.value].chipType !== "WCH"
+    )
       return "Offset field in row " + index + " is not a valid address!";
     // Repeated offset used
     else if (
       offsetArr.includes(offset) &&
-      deviceTypeSelect.value !== "WCH_BOARD"
+      config[deviceTypeSelect.value].chipType !== "WCH"
     )
       return "Offset field in row " + index + " is already in use!";
     else offsetArr.push(offset);
 
     var fileObj = row.cells[1].childNodes[0];
     fileData = fileObj.data;
+    console.log(fileObj?.files?.[0].size, "BBBBBB", fileObj.data.length);
     if (fileData == null) return "No file selected for row: " + index + "!";
+    else if (
+      config[deviceTypeSelect.value].chipType === "WCH" &&
+      !fileObj?.files?.[0].name.endsWith(".hex")
+    ) {
+      return "Please upload a valid .hex file";
+    }
   }
   return "success";
 }
@@ -665,7 +675,7 @@ programButton.onclick = async () => {
   isFlashByQuickTryMode = false;
   $("#v-pills-console-tab").click();
   try {
-    if (deviceTypeSelect.value === "WCH_BOARD") {
+    if (config[deviceTypeSelect.value].chipType == "WCH") {
       await loader.flashFirmware(fileArr[0].data);
     } else {
       const flashOptions = {
@@ -686,9 +696,8 @@ programButton.onclick = async () => {
 };
 
 async function downloadAndFlash(fileURL) {
-  let flashFile = $("input[type='radio'][name='chipType']:checked").val();
   let data = "";
-  if (flashFile === "wchPath/wch1.0.bin") {
+  if (config[deviceTypeSelect.value].chipType == "WCH") {
     data = await utilities.getImageData("http://localhost:3000/blink.hex");
     console.log("XXXXXXX", data);
   } else {
@@ -697,7 +706,7 @@ async function downloadAndFlash(fileURL) {
   try {
     if (data !== undefined) {
       $("#v-pills-console-tab").click();
-      if (flashFile === "wchPath/wch1.0.bin") {
+      if (config[deviceTypeSelect.value].chipType == "WCH") {
         await loader.flashFirmware(data);
       } else {
         const flashOptions = {
@@ -918,7 +927,7 @@ flashButton.onclick = async () => {
 
     buildAppLinks();
     $("#statusModal").click();
-    if (flashFile !== "wchPath/wch1.0.bin") {
+    if (config[deviceTypeSelect.value].chipType !== "WCH") {
       esploader.status = "started";
     }
     postFlashDone();
