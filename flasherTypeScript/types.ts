@@ -65,3 +65,9 @@ export interface ChipData {
   config_registers?: ConfigRegister[];
   variants: Variant[];
 }
+
+export interface EspTerminal {
+  clean: () => void;
+  writeLine: (data: string) => void;
+  write: (data: string) => void;
+}

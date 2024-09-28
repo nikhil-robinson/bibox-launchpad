@@ -14,17 +14,17 @@ export class UsbTransport {
   constructor(device: USBDevice) {
     this.device = device;
   }
-  static debugLog(message: string) {
-    const consoleTextarea =
-      document.querySelector<HTMLTextAreaElement>("#console")!;
-    consoleTextarea.value += message + "\n";
-    consoleTextarea.scrollTop = consoleTextarea.scrollHeight;
-  }
-  static clearLog() {
-    const consoleTextarea =
-      document.querySelector<HTMLTextAreaElement>("#console")!;
-    consoleTextarea.value = "";
-  }
+  // static debugLog(message: string) {
+  //   const consoleTextarea =
+  //     document.querySelector<HTMLTextAreaElement>("#console")!;
+  //   consoleTextarea.value += message + "\n";
+  //   consoleTextarea.scrollTop = consoleTextarea.scrollHeight;
+  // }
+  // static clearLog() {
+  //   const consoleTextarea =
+  //     document.querySelector<HTMLTextAreaElement>("#console")!;
+  //   consoleTextarea.value = "";
+  // }
   static async scanDevices(): Promise<number> {
     const filters = [
       { vendorId: 0x4348, productId: 0x55e0 },
@@ -91,6 +91,12 @@ export class UsbTransport {
 
   static async openAny(): Promise<UsbTransport> {
     return this.openNth(0);
+  }
+
+  static async closeAny(): Promise<void> {
+    const devices = await navigator.usb.getDevices();
+    const device = devices[0];
+    device.close();
   }
 
   async sendRaw(raw: Uint8Array): Promise<void> {
