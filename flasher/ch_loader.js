@@ -200,6 +200,18 @@ export class CH_loader extends transport_handler.UsbTransport {
             }
         });
     }
+    async eraseCode(sectors) {
+        const command = { type: "Erase", sectors: sectors };
+        const sendData = await this.protocol.ntoRaw(command);
+        console.log("erase send data", sendData);
+        this.sendRaw(sendData);
+        const res = await this.recv();
+        if (res.type == "Err")
+            throw new Error("Error in erasing code");
+        // else CH_loader.debugLog(`Erased ${sectors} code flash sectors`);
+        else
+            this.espLoaderTerminal.writeLine(`Erased ${sectors} code flash sectors`);
+    }
     async eraseFlash(flash_size = this.flash_size) {
         if (!this.flash_size) {
             await this.findDevice();
@@ -227,7 +239,6 @@ export class CH_loader extends transport_handler.UsbTransport {
         else
             this.espLoaderTerminal.writeLine(`Erased ${sectors} code flash sectors`);
         // else CH_loader.debugLog(`Erased ${sectors} code flash sectors`);
-        this.espLoaderTerminal.writeLine(`Flashing Completed.....`);
     }
     async flashChunk(address, raw, key) {
         // XOR the raw data with the key
@@ -240,14 +251,82 @@ export class CH_loader extends transport_handler.UsbTransport {
             data: xored,
         };
         const sendData = await this.protocol.ntoRaw(command);
-        this.sendRaw(sendData);
+        await this.sendRaw(sendData);
+        await this.sleep(300);
         const res = await this.recv();
         if (res.type == "Err") {
             throw new Error(`Program 0x${address.toString(16).padStart(8, "0")} failed`);
         }
         // CH_loader.debugLog("Programmed 0x" + address.toString(16).padStart(8, "0"));
-        this.espLoaderTerminal.writeLine("Programmed 0x" + address.toString(16).padStart(8, "0"));
+        // this.espLoaderTerminal.writeLine(
+        //   "Programmed 0x" + address.toString(16).padStart(8, "0")
+        // );
     }
+    //-----------------------------------------------------------------------------
+    extendFirmwareToSectorBoundary(buf) {
+        const newArray = [...buf];
+        if (newArray.length % 1024 !== 0) {
+            const remain = 1024 - (newArray.length % 1024);
+            newArray.push(...new Array(remain).fill(0));
+        }
+        return newArray;
+    }
+    mergeSections(sections) {
+        sections.sort((a, b) => a.offset - b.offset); // order by start address
+        const startAddress = sections[0].offset;
+        const endAddress = sections[sections.length - 1].offset +
+            sections[sections.length - 1].value.length;
+        const totalSize = endAddress - startAddress;
+        const binary = new Uint8Array(totalSize);
+        // FIXME: check section overlap?
+        for (const section of sections) {
+            const sectStart = section.offset - startAddress;
+            binary.set(section.value, sectStart);
+        }
+        return binary;
+    }
+    async readIHex(data) {
+        console.log("read intel hex");
+        const records = [];
+        let baseAddress = 0;
+        const lines = data.split("\n");
+        for (const line of lines) {
+            if (line.startsWith(":")) {
+                const record = this.parseIHexRecord(line);
+                switch (record.type) {
+                    case "00": // Data
+                        const offset = baseAddress + record.offset;
+                        records.push({ offset, value: record.data });
+                        break;
+                    case "01": // End Of File
+                        break;
+                    case "02": // Extended Segment Address
+                        baseAddress = record.address * 16;
+                        break;
+                    case "03": // Start Segment Address
+                        break;
+                    case "04": // Extended Linear Address
+                        baseAddress = record.address << 16;
+                        break;
+                    case "05": // Start Linear Address
+                        break;
+                }
+            }
+        }
+        return this.mergeSections(records);
+    }
+    parseIHexRecord(line) {
+        const length = parseInt(line.substr(1, 2), 16);
+        const offset = parseInt(line.substr(3, 4), 16);
+        const type = line.substr(7, 2);
+        const data = new Uint8Array(length);
+        for (let i = 0; i < length; i++) {
+            data[i] = parseInt(line.substr(9 + i * 2, 2), 16);
+        }
+        const address = parseInt(line.substr(9, 4), 16);
+        return { type, offset, data, address };
+    }
+    //------------------------------------------------------------------
     intelHexToUint8Array(hexString) {
         const lines = hexString.trim().split("\n");
         const data = [];
@@ -265,11 +344,18 @@ export class CH_loader extends transport_handler.UsbTransport {
     }
     async flashFirmware(firmware) {
         try {
-            const raw = this.intelHexToUint8Array(firmware);
+            // const raw = this.intelHexToUint8Array(firmware);
+            const raw = await this.readIHex(firmware);
             const sectors = raw.length / this.SECTOR_SIZE + 1;
-            if (!this.chip_id && !this.chip_uid)
+            // if (!this.chip_id && !this.chip_uid) await this.findDevice();
+            // await this.eraseFlash(sectors);
+            if (!this.flash_size)
                 await this.findDevice();
-            await this.eraseFlash(sectors);
+            this.espLoaderTerminal.writeLine("Erase Starting ...");
+            await this.eraseCode(sectors);
+            this.espLoaderTerminal.writeLine("Erase completed ...");
+            // CH_loader.debugLog("flashing firmware ...");
+            this.espLoaderTerminal.writeLine("flashing firmware ...");
             const key = this.xorKey();
             const keyChecksum = key.reduce((acc, x) => (acc + x) & 0xff, 0);
             console.log("key ", key, keyChecksum);

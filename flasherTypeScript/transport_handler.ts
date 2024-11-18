@@ -14,6 +14,9 @@ export class UsbTransport {
   constructor(device: USBDevice) {
     this.device = device;
   }
+  async sleep(microseconds: number) {
+    return new Promise((resolve) => setTimeout(resolve, microseconds / 1000));
+  }
   // static debugLog(message: string) {
   //   const consoleTextarea =
   //     document.querySelector<HTMLTextAreaElement>("#console")!;

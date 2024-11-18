@@ -1,3 +1,14 @@
+export interface Section {
+  offset: number;
+  value: Uint8Array;
+}
+export interface IHexRecord {
+  type: string;
+  offset: number;
+  data: Uint8Array;
+  address: number;
+}
+
 export type Chip = {
   name: string; // Chip's name, without variants suffix
   chipId: number;
