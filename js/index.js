@@ -54,6 +54,7 @@ import * as utilities from "./utils.js";
 import * as esptooljs from "../node_modules/esptool-js/bundle.js";
 import * as toml from "../node_modules/smol-toml/dist/index.js";
 import * as chLodar from "../flasher/ch_loader.js";
+// import * as chLodar from "../node_modules/flasher-folder/flasher/ch_loader.js";
 
 const ESPLoader = esptooljs.ESPLoader;
 const Transport = esptooljs.Transport;
@@ -696,12 +697,12 @@ programButton.onclick = async () => {
 
 async function downloadAndFlash(fileURL) {
   let data = "";
-  if (config[deviceTypeSelect.value].chipType == "WCH") {
-    data = await utilities.getImageData("http://localhost:3000/toki.hex");
-    console.log("XXXXXXX", data);
-  } else {
-    data = await utilities.getImageData(fileURL);
-  }
+  // if (config[deviceTypeSelect.value].chipType == "WCH") {
+  //   data = await utilities.getImageData("http://localhost:3000/main.hex");
+  //   console.log("XXXXXXX", data);
+  // } else {
+  data = await utilities.getImageData(fileURL);
+  // }
   try {
     if (data !== undefined) {
       $("#v-pills-console-tab").click();

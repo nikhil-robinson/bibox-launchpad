@@ -7,7 +7,6 @@
     "xterm": "^4.17.0",
     "xterm-addon-fit": "^0.5.0",
     "@types/node": "^20.14.11",
-    "@types/w3c-web-usb": "^1.0.10",
-    "flasher-folder": "https://github.com/nikhil-robinson/bibox-launchpad.git"
+    "@types/w3c-web-usb": "^1.0.10"
   }
 }
