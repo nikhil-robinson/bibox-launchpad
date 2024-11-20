@@ -21,6 +21,7 @@ const progressMsgDIY = document.getElementById("progressMsgDIY");
 const deviceTypeSelect = document.getElementById("device");
 const frameworkSelect = document.getElementById("frameworkSel");
 const chipSetsRadioGroup = document.getElementById("chipsets");
+const developKitsRadioGroup = document.getElementById("developKits");
 const mainContainer = document.getElementById("mainContainer");
 const setupPayloadRow = document.getElementById("setupPayloadRow");
 const setupPayloadRowQS = document.getElementById("setupPayloadRowQS");
@@ -30,9 +31,14 @@ const setupQRCodeContainerQS = document.getElementById(
 );
 const setupLogoContainer = document.getElementById("setupLogoContainer");
 const setupLogoContainerQS = document.getElementById("setupLogoContainerQS");
-const appInfoContainer = document.getElementById("appInfoContainer");
+const appDescriptionContainer = document.getElementById(
+  "appDescriptionContainer"
+);
+const appDescription = document.getElementById("appDescription");
+const appInfoFlashContainer = document.getElementById("appInfoFlashContainer");
 const terminalContainer = document.getElementById("terminalContainer");
 const appInfo = document.getElementById("appInfo");
+const appInfoFlash = document.getElementById("appInfoFlash");
 const consolePageWrapper = document.getElementById("consolePageWrapper");
 const appConfigInfoContainer = document.getElementById(
   "appConfigInfoContainer"
@@ -41,6 +47,12 @@ const appConfigInfo = document.getElementById("appConfigInfo");
 const progressMsgContainerQS = document.getElementById(
   "progressMsgContainerQS"
 );
+const developKitsContainer = document.getElementById("developKitsContainer");
+const appInfoTriggerContainer = document.getElementById(
+  "appInfoTriggerContainer"
+);
+const rightOffCanvasContainer = document.getElementById("offcanvasRight");
+
 const windowHelp_Connect = document.getElementById("windowHelp_Connect");
 const offset1_flashAddress_input = document.getElementById("offset1");
 const addFile_button = document.getElementById("addFile");
@@ -178,8 +190,15 @@ async function buildQuickTryUI_v1_0() {
       appConfigInfoContainer.style.display = "none";
     }
   }
+  // if (supported_apps) {
+  //   addDeviceTypeOption(supported_apps);
+  //   populateSupportedChipsets(config[supported_apps[0]]);
+  //   if (config[supported_apps[0]].readme?.text) {
+  //     markdown_payload_url = config[supported_apps[0]].readme.text;
+  //   }
   if (supported_apps) {
     addDeviceTypeOption(supported_apps);
+    addAppDescription(config[supported_apps[0]].description);
     populateSupportedChipsets(config[supported_apps[0]]);
     if (config[supported_apps[0]].readme?.text) {
       markdown_payload_url = config[supported_apps[0]].readme.text;
@@ -189,6 +208,18 @@ async function buildQuickTryUI_v1_0() {
       consoleBaudrateFromToml = config[supported_apps[0]].console_baudrate;
     }
   }
+
+  if (markdown_payload_url) {
+    let response = await fetch(markdown_payload_url);
+    let mdContent = await response.text();
+    let htmlText = utilities.mdToHtmlConverter(mdContent);
+
+    appInfoTriggerContainer.style.display = "";
+    appInfo.innerHTML = htmlText;
+
+    utilities.resizeTerminal(fitAddon);
+  }
+
   setAppURLs(config[supported_apps[0]]);
 }
 
@@ -201,6 +232,15 @@ function addDeviceTypeOption(apps) {
     option.text = app;
     deviceTypeSelect.appendChild(option);
   });
+}
+
+function addAppDescription(appDesc) {
+  if (appDesc) {
+    appDescription.innerHTML = appDesc;
+    appDescriptionContainer.style.display = "block";
+  } else {
+    appDescriptionContainer.style.display = "none";
+  }
 }
 
 config = await buildQuickTryUI();
@@ -223,8 +263,25 @@ set the wch board property when its selected
 show the help text for window user flash the wch board,
 disable the add file button and disable the flash address input
 */
-function setWCH_board_UI_Property(deviceConfig) {
-  if (config[deviceTypeSelect.value].chipType == "WCH") {
+
+//find the radio button selected input label, in label present the chipset
+//or find the selected chipset
+const selectedChipset = () => {
+  try {
+    const checkedRadio = $("input[type='radio'][name='chipType']:checked");
+    const label = $(`label[for='${checkedRadio.attr("id")}']`);
+    const labelText = label.text().trim();
+    return labelText;
+  } catch (e) {
+    console.log("ERROR", e);
+  }
+};
+
+//config[deviceTypeSelect.value].chipType == "WCH"
+async function setWCH_board_UI_Property(deviceConfig) {
+  await new Promise((reslove) => setTimeout(reslove, 100));
+  let chipSet = selectedChipset();
+  if (utilities.usbPortOpenChipSets.includes(chipSet)) {
     windowHelp_Connect.style.display = "block";
     offset1_flashAddress_input.disabled = true;
     offset1_flashAddress_input.value = "0";
@@ -237,8 +294,47 @@ function setWCH_board_UI_Property(deviceConfig) {
   }
 }
 
+function populateSupportedDevelopKits(developKitsConfig) {
+  developKitsRadioGroup.innerHTML = "";
+  let inputElement;
+
+  developKitsConfig.forEach((developKit, i) => {
+    var div = document.createElement("div");
+    div.setAttribute("class", "form-check-inline");
+
+    var lblElement = document.createElement("label");
+    lblElement.setAttribute("class", "form-check-label");
+    lblElement.setAttribute("for", "radio-" + developKit);
+    lblElement.innerHTML = developKit + "&nbsp;";
+
+    inputElement = document.createElement("input");
+    inputElement.setAttribute("type", "radio");
+    inputElement.setAttribute("class", "form-check-input");
+    inputElement.name = "developKitsType";
+    inputElement.id = "radio-" + developKit;
+    inputElement.value = config[deviceTypeSelect.value].image[developKit];
+
+    lblElement.appendChild(inputElement);
+
+    div.appendChild(lblElement);
+
+    developKitsRadioGroup.appendChild(div);
+    if (i === 0) {
+      inputElement.checked = true;
+      var chipTypeButtons = $('input[type="radio"][name="chipType"]:checked');
+      chipTypeButtons.val(inputElement.value);
+    }
+  });
+
+  developKitsContainer.style.display = "";
+}
+
 function populateSupportedChipsets(deviceConfig) {
   chipSetsRadioGroup.innerHTML = "";
+  // Hide and clear the display information of developKits.
+  developKitsContainer.style.display = "none";
+  developKitsRadioGroup.innerHTML = "";
+
   const supportedChipSets = deviceConfig["chipsets"];
   let i = 1;
   let inputElement;
@@ -259,8 +355,14 @@ function populateSupportedChipsets(deviceConfig) {
     inputElement.name = "chipType";
     inputElement.id = "radio-" + chipset;
     inputElement.value = deviceConfig["image"][chipset.toLowerCase()];
-    if (chipset.toLowerCase() === chip.toLowerCase())
+    if (chipset.toLowerCase() === chip.toLowerCase()) {
       inputElement.checked = true;
+      if (deviceConfig.developKits?.[chipset.toLowerCase()]) {
+        populateSupportedDevelopKits(
+          deviceConfig.developKits[chipset.toLowerCase()]
+        );
+      }
+    }
 
     lblElement.appendChild(inputElement);
 
@@ -273,8 +375,42 @@ function populateSupportedChipsets(deviceConfig) {
 
   if (supportedChipSets.length === 1) {
     inputElement.checked = true;
+    if (deviceConfig.developKits?.[supportedChipSets[0].toLowerCase()]) {
+      populateSupportedDevelopKits(
+        deviceConfig.developKits[supportedChipSets[0].toLowerCase()]
+      );
+    }
   }
 }
+
+$("#chipsets").on(
+  "change",
+  'input[type="radio"][name="chipType"]',
+  function () {
+    var id = $('input[type="radio"][name="chipType"]:checked').attr("id");
+    var chipset = id.split("radio-")[1];
+    if (config[deviceTypeSelect.value].developKits?.[chipset.toLowerCase()]) {
+      populateSupportedDevelopKits(
+        config[deviceTypeSelect.value].developKits[chipset.toLowerCase()]
+      );
+    } else {
+      developKitsRadioGroup.innerHTML = "";
+      developKitsContainer.style.display = "none";
+    }
+  }
+);
+
+$("#developKits").on(
+  "change",
+  'input[type="radio"][name="developKitsType"]',
+  function () {
+    var selectedValue = $(
+      'input[type="radio"][name="developKitsType"]:checked'
+    ).val();
+    var chipTypeButtons = $('input[type="radio"][name="chipType"]:checked');
+    chipTypeButtons.val(selectedValue);
+  }
+);
 
 function setAppURLs(appConfig) {
   ios_app_url = appConfig.ios_app_url;
@@ -293,10 +429,32 @@ $("#device").on("change", function () {
   setWCH_board_UI_Property(config[deviceTypeSelect.value]);
   populateSupportedChipsets(config[deviceTypeSelect.value]);
   setAppURLs(config[deviceTypeSelect.value]);
+  addAppDescription(config[deviceTypeSelect.value].description);
+
   if (config[deviceTypeSelect.value].readme?.text) {
     markdown_payload_url = config[deviceTypeSelect.value].readme.text;
+    fetch(markdown_payload_url)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.text();
+      })
+      .then((mdContent) => {
+        let htmlText = utilities.mdToHtmlConverter(mdContent);
+
+        appInfo.innerHTML = htmlText;
+
+        utilities.resizeTerminal(fitAddon);
+        appInfoTriggerContainer.style.display = "";
+      })
+      .catch((error) => {
+        console.error("Error fetching data:", error);
+        // Handle error scenario
+      });
   } else {
     markdown_payload_url = "";
+    appInfoTriggerContainer.style.display = "none";
   }
 
   if (config[deviceTypeSelect.value].console_baudrate) {
@@ -326,9 +484,9 @@ let espLoaderTerminal = {
 
 async function connectToDevice() {
   let flashFile = $("input[type='radio'][name='chipType']:checked").val();
-
+  let chipSet = selectedChipset();
   if (device === null) {
-    if (config[deviceTypeSelect.value].chipType == "WCH") {
+    if (utilities.usbPortOpenChipSets.includes(chipSet)) {
       try {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
@@ -406,23 +564,25 @@ function postConnectControls() {
       "<b><span style='color:red'>Unable to detect device. Please ensure the device is not connected in another application</span></b>";
   lblConnTo.style.display = "block";
 
-  $('input:radio[id="radio-' + chip + '"]').attr("checked", true);
+  $('input:radio[id="radio-' + chip + '"]')
+    .prop("checked", true)
+    .trigger("change");
 }
 
 connectButton.onclick = async () => {
   if (!connected) await connectToDevice();
-
   postConnectControls();
 };
 
 resetButton.onclick = async () => {
   let consoleBaudrate;
+  let chipSet = selectedChipset();
 
   postFlashClick();
   consoleStartButton.disabled = false;
   $("#closeResetModal").click();
 
-  if (config[deviceTypeSelect.value].chipType == "WCH") {
+  if (utilities.usbPortOpenChipSets.includes(chipSet)) {
     try {
       await loader.reset();
     } catch (e) {
@@ -476,8 +636,9 @@ eraseButton.onclick = async () => {
   postFlashClick();
   terminalContainer.classList.remove("fade-in-down");
   eraseButton.disabled = true;
+  let chipSet = selectedChipset();
   $("#v-pills-console-tab").click();
-  if (config[deviceTypeSelect.value].chipType == "WCH") {
+  if (utilities.usbPortOpenChipSets.includes(chipSet)) {
     await loader.eraseFlash();
   } else {
     await esploader.eraseFlash();
@@ -563,13 +724,14 @@ disconnectButton.onclick = async () => {
   lblConnTo.style.display = "none";
   alertDiv.style.display = "none";
   ensureConnect.style.display = "initial";
-  clearAppInfoHistory();
+  clearAppInfoFlashHistory();
   cleanUp();
 };
 
 consoleStartButton.onclick = async () => {
   if (device === null) {
-    if (config[deviceTypeSelect.value].chipType == "WCH") {
+    let chipSet = selectedChipset();
+    if (utilities.usbPortOpenChipSets.includes(chipSet)) {
       try {
         device = await navigator.usb.requestDevice({
           filters: utilities.usb_Port_Filters,
@@ -613,16 +775,17 @@ function validate_program_inputs() {
     var offSetObj = row.cells[0].childNodes[0];
     offset = parseInt(offSetObj.value);
 
+    let chipSet = selectedChipset();
     // Non-numeric or blank offset
     if (
       Number.isNaN(offset) &&
-      config[deviceTypeSelect.value].chipType !== "WCH"
+      !utilities.usbPortOpenChipSets.includes(chipSet)
     )
       return "Offset field in row " + index + " is not a valid address!";
     // Repeated offset used
     else if (
       offsetArr.includes(offset) &&
-      config[deviceTypeSelect.value].chipType !== "WCH"
+      !utilities.usbPortOpenChipSets.includes(chipSet)
     )
       return "Offset field in row " + index + " is already in use!";
     else offsetArr.push(offset);
@@ -632,7 +795,7 @@ function validate_program_inputs() {
     console.log(fileObj?.files?.[0].size, "BBBBBB", fileObj.data.length);
     if (fileData == null) return "No file selected for row: " + index + "!";
     else if (
-      config[deviceTypeSelect.value].chipType === "WCH" &&
+      utilities.usbPortOpenChipSets.includes(chipSet) &&
       !fileObj?.files?.[0].name.endsWith(".hex")
     ) {
       return "Please upload a valid .hex file";
@@ -670,12 +833,13 @@ programButton.onclick = async () => {
 
     fileArr.push({ data: fileObj.data, address: offset });
   }
-  clearAppInfoHistory();
+  clearAppInfoFlashHistory();
   isFlashByDIYMode = true;
   isFlashByQuickTryMode = false;
   $("#v-pills-console-tab").click();
+  let chipSet = selectedChipset();
   try {
-    if (config[deviceTypeSelect.value].chipType == "WCH") {
+    if (utilities.usbPortOpenChipSets.includes(chipSet)) {
       await loader.flashFirmware(fileArr[0].data);
     } else {
       const flashOptions = {
@@ -690,14 +854,13 @@ programButton.onclick = async () => {
     }
     postFlashDone();
     terminalContainer.classList.remove("fade-in-down");
-  } catch (e) {
-    console.log("ERROR", e);
-  }
+  } catch (e) {}
 };
 
 async function downloadAndFlash(fileURL) {
   let data = "";
-  // if (config[deviceTypeSelect.value].chipType == "WCH") {
+  let chipSet = selectedChipset();
+  // if (utilities.usbPortOpenChipSets.includes(chipSet)) {
   //   data = await utilities.getImageData("http://localhost:3000/main.hex");
   //   console.log("XXXXXXX", data);
   // } else {
@@ -706,7 +869,7 @@ async function downloadAndFlash(fileURL) {
   try {
     if (data !== undefined) {
       $("#v-pills-console-tab").click();
-      if (config[deviceTypeSelect.value].chipType == "WCH") {
+      if (utilities.usbPortOpenChipSets.includes(chipSet)) {
         await loader.flashFirmware(data);
       } else {
         const flashOptions = {
@@ -869,16 +1032,16 @@ function cleanUpOldFlashHistory() {
   setupQRCodeContainerQS.style.cssText = "";
 }
 
-function clearAppInfoHistory(triggeringAction = "") {
+function clearAppInfoFlashHistory(triggeringAction = "") {
   switch (triggeringAction) {
     case "handleFlashCleanup":
-      appInfoContainer.classList.remove("slide-up", "bounce");
+      appInfoFlashContainer.classList.remove("slide-up", "bounce");
       terminalContainer.classList.remove("slide-right");
       break;
     default:
-      appInfo.innerHTML = "";
-      appInfoContainer.style.display = "none";
-      appInfoContainer.classList.remove("slide-up", "bounce");
+      appInfoFlash.innerHTML = "";
+      appInfoFlashContainer.style.display = "none";
+      appInfoFlashContainer.classList.remove("slide-up", "bounce");
       terminalContainer.classList.add("col-12", "fade-in-down");
       terminalContainer.classList.remove("col-6", "slide-right");
       break;
@@ -888,46 +1051,60 @@ function clearAppInfoHistory(triggeringAction = "") {
 flashButton.onclick = async () => {
   if (
     chipSetsRadioGroup.querySelectorAll("input[type=radio]:checked").length !==
-    0
+      0 &&
+    (developKitsContainer.style.display === "none" ||
+      developKitsRadioGroup.querySelectorAll("input[type=radio]:checked")
+        .length !== 0)
   ) {
     let flashFile = $("input[type='radio'][name='chipType']:checked").val();
     var file_server_url = config.firmware_images_url;
-
     progressMsgQS.style.display = "inline";
     progressMsgContainerQS.style.display = "block";
 
     cleanUpOldFlashHistory();
-    clearAppInfoHistory();
+    clearAppInfoFlashHistory();
     postFlashClick();
     isFlashByDIYMode = false;
     isFlashByQuickTryMode = true;
     await downloadAndFlash(file_server_url + flashFile);
+
+    // progressMsgQS.style.display = "inline";
+    // progressMsgContainerQS.style.display = "block";
 
     if (markdown_payload_url) {
       let response = await fetch(markdown_payload_url);
       let mdContent = await response.text();
       let htmlText = utilities.mdToHtmlConverter(mdContent);
 
-      appInfo.innerHTML = htmlText;
-      appInfoContainer.style.display = "block";
-      appInfoContainer.classList.add("slide-up");
+      appInfoFlash.innerHTML = htmlText;
+      appInfoFlashContainer.style.display = "block";
+      appInfoFlashContainer.classList.add("slide-up");
       terminalContainer.classList.remove("col-12", "fade-in-down");
       terminalContainer.classList.add("col-6", "slide-right");
 
       setTimeout(() => {
-        appInfoContainer.classList.add("bounce");
+        appInfoFlashContainer.classList.add("bounce");
       }, 2500);
 
       setTimeout(() => {
-        clearAppInfoHistory("handleFlashCleanup");
+        clearAppInfoFlashHistory("handleFlashCleanup");
       }, 5000);
+
+      // setTimeout(() => {
+      //   appInfoContainer.classList.add("bounce");
+      // }, 2500);
+
+      // setTimeout(() => {
+      //   clearAppInfoHistory("handleFlashCleanup");
+      // }, 5000);
 
       utilities.resizeTerminal(fitAddon);
     }
 
     buildAppLinks();
     $("#statusModal").click();
-    if (config[deviceTypeSelect.value].chipType !== "WCH") {
+    let chipSet = selectedChipset();
+    if (!utilities.usbPortOpenChipSets.includes(chipSet)) {
       esploader.status = "started";
     }
     postFlashDone();
@@ -988,11 +1165,11 @@ function removeClassesOnMediaQuery() {
   const mediaQuery = window.matchMedia("(max-width: 992px)");
   function handleMediaQueryChange(mediaQuery) {
     if (mediaQuery.matches) {
-      appInfoContainer.classList.remove("col-6");
+      appInfoFlashContainer.classList.remove("col-6");
       terminalContainer.classList.remove("col-6");
       consolePageWrapper.classList.add("flex-column-reverse");
     } else {
-      appInfoContainer.classList.add("col-6");
+      appInfoFlashContainer.classList.add("col-6");
       terminalContainer.classList.add("col-6");
       consolePageWrapper.classList.remove("flex-column-reverse");
     }
@@ -1002,3 +1179,20 @@ function removeClassesOnMediaQuery() {
 }
 
 removeClassesOnMediaQuery();
+
+const mutationObserverCallback = (mutationList) => {
+  mutationList.forEach((mutation) => {
+    if (mutation.type === "attributes" && mutation.attributeName === "class") {
+      appInfoTriggerContainer.style.display = Array.from(
+        mutation.target.classList
+      ).includes("show")
+        ? "none"
+        : "";
+    }
+  });
+};
+
+const classChangeObserver = new MutationObserver(mutationObserverCallback);
+classChangeObserver.observe(rightOffCanvasContainer, {
+  attributes: true,
+});

@@ -20,6 +20,9 @@ export const usb_Port_Filters = [
   { vendorId: 0x1a86, productId: 0x55e0 },
 ];
 
+//usb port open allow chipsets are
+export const usbPortOpenChipSets = ["CH592", "CH32X035"];
+
 export function getTerminalColumns(mainContainer = null) {
   const mainContainerWidth = mainContainer?.offsetWidth || 1320;
   return Math.round(mainContainerWidth / 8.25);
