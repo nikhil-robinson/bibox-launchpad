@@ -1,0 +1,17 @@
+{
+  "name": "CH643 Series",
+  "mcu_type": "0x14",
+  "device_type": "0x24",
+  "support_net": false,
+  "support_usb": true,
+  "support_serial": true,
+  "description": "CH643 RISC-V4C RGB Display Driver Series",
+  "variants": [
+    {
+      "name": "CH643",
+      "chip_id": 48,
+      "alt_chip_ids": ["ALL"],
+      "flash_size": 63488
+    }
+  ]
+}
