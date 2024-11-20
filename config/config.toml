@@ -115,4 +115,4 @@ image.esp32-s3 = "2d-plotter/2d-plotter.bin"
 
 [TOKI]
 chipsets = ["CH592"]
-image.ch592 = "toki/toki.bin"
+image.ch592 = "toki/toki.hex"
