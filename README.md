@@ -1,4 +1,34 @@
-# THis is port of the offical esp-lauchpad to support the firmwares of YUDU robotics.
+# This is port of the offical esp-lauchpad to support the firmwares of YUDU robotics.
+
+This is a modified version of the offical esp-lauchpad to add support for other microcontrollers. This is done for YuDU robotics to hast there firmware easily.
+
+
+ESP Launchpad is a web based tool, available for flashing firmware application to the ESP32 device connected via USB serial port.
+
+There are two modes available for using this tool:
+
+Quick Start : 4 Easy Steps - Plug, Connect, Choose Built-In Firmware Image, Flash!
+DIY : For Advanced Users, use your own pre-built Firmware Image from local storage and Flash!
+Quick Start:
+
+ESP currently provides a few built in, ready to use examples that can be flashed on the ESP32 devices. You can choose one of the built in firmware application for either RainMaker or Matter, and as per the chipset type. Just plug in your ESP32 device to the serial USB port. Use connect option in the menu to connect to your ESP32 device. Choose the firmware from the built-in firmware example set. Click Flash!
+
+The firmware will be flashed on to your connected device. You can watch the progress of the firmware flashing in the console window.
+
+This easy, 4 step process will flash the firmware on to the connected device and bring it into play as you want it to be.
+
+Try Now
+
+DIY:
+
+You can build your own firmware binaries using the ESP IDF tools. These firmware images can then be flashed from your local machine to the connected device. Just connect your ESP32 device to the serial USB port. Using the web based tool, connect to your device. You can then select the firmware application from the local storage of the machine. Choose the memory address where to flash the firmware. Firmware can be a single file or a set of multiple files to be flashed at particular memory addresses.
+
+Click Flash!
+
+The firmware will be flashed on to your connected device. You can watch the progress of the firmware flashing in the console window.
+
+
+
 
 # WCH Board Update Process
 
@@ -63,3 +93,9 @@ If you need to modify the WCH board flasher code, follow these instructions:
 
 5. **Save and Push Changes**:
    - After completing the changes, save your work and push it to your repository.
+
+
+# Credits
+
+1. [Tushar kanti](https://github.com/tusharkanti647) for the addition of WCH series 
+2. [Goutham S krishna](https://github.com/gouthamsk98r) for the [wchisp webusn support](https://github.com/gouthamsk98/wchisp-webusb)
