@@ -2,7 +2,7 @@ esp_toml_version = 1.0
 
 firmware_images_url = "https://embedded.plode.org/bins/"
 
-supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING0", "ZING1","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "KLAW", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY","TEST", "DS_CALIBRATE", "PEECEE_PRO", "PLAYCOMPUTER_TEST", "ROBOKI_TEST", "AI_MODULE", "ATR_H2", "2D-PLOTTER"]
+supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING0", "ZING1","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "KLAW", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY","TEST", "DS_CALIBRATE", "PEECEE_PRO", "PLAYCOMPUTER_TEST", "ROBOKI_TEST", "AI_MODULE", "ATR_H2", "2D-PLOTTER", "WCH_BOARD"]
 
 [PLAYCOMPUTER]
 chipsets = ["ESP32","ESP32-S3"]
@@ -112,3 +112,7 @@ image.esp32-h2 = "atr_h2/atr_h2.bin"
 [2D-PLOTTER]
 chipsets = ["ESP32-S3"]
 image.esp32-s3 = "2d-plotter/2d-plotter.bin"
+
+[WCH_BOARD]
+chipsets = ["CH592"]
+image.wch = "wchPath/wch1.0.bin"
