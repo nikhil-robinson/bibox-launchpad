@@ -98,4 +98,4 @@ If you need to modify the WCH board flasher code, follow these instructions:
 # Credits
 
 1. [Tushar kanti](https://github.com/tusharkanti647) for the addition of WCH series 
-2. [Goutham S krishna](https://github.com/gouthamsk98r) for the [wchisp webusn support](https://github.com/gouthamsk98/wchisp-webusb)
+2. [Goutham S krishna](https://github.com/gouthamsk98) for the [wchisp webusn support](https://github.com/gouthamsk98/wchisp-webusb)
