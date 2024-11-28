@@ -65,7 +65,8 @@ let resizeTimeout = false;
 import * as utilities from "./utils.js";
 import * as esptooljs from "../node_modules/esptool-js/bundle.js";
 import * as toml from "../node_modules/smol-toml/dist/index.js";
-import * as chLodar from "../flasher/ch_loader.js";
+// import * as chLodar from "../flasher/ch_loader.js";
+import * as chLodar from "./flasher/ch_loader.js";
 // import * as chLodar from "../node_modules/flasher-folder/flasher/ch_loader.js";
 
 const ESPLoader = esptooljs.ESPLoader;

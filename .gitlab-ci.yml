@@ -7,7 +7,6 @@ pages:
     - cp -r assets public/assets
     - cp -r styles public/styles
     - cp -r node_modules public/node_modules
-    - cp -r node_modules public/flasher
     - cp -r js public/js
     - cp -r config public/config
     - cp index.html public/
