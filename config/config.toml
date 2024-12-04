@@ -2,7 +2,7 @@ esp_toml_version = 1.0
 
 firmware_images_url = "https://embedded.plode.org/bins/"
 
-supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING0", "ZING1","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "KLAW", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY","TEST", "DS_CALIBRATE", "PEECEE_PRO", "PLAYCOMPUTER_TEST", "ROBOKI_TEST", "AI_MODULE", "ATR_H2", "2D-PLOTTER", "TOKI", "ATR_H2_TEST", "TOKI_TEST", "LOGICKI_TEST", "LOGICKI"]
+supported_apps = ["PLAYCOMPUTER","ROBOKI","ZING0", "ZING1","HEXAPOD","4DOF", "OID_PEN", "PLICKER", "KLAW", "TOY_ROBOTIC_ARM", "3D_PRINTER_MB", "3D_PRINTER_DISPALY","TEST", "DS_CALIBRATE", "PEECEE_PRO", "PLAYCOMPUTER_TEST", "ROBOKI_TEST", "AI_MODULE", "ATR_H2", "2D-PLOTTER", "TOKI", "ATR_H2_TEST", "TOKI_TEST", "LOGIKI_TEST", "LOGIKI"]
 
 [PLAYCOMPUTER]
 chipsets = ["ESP32","ESP32-S3"]
@@ -125,10 +125,10 @@ image.esp32-h2 = "atr_test/atr_h2.bin"
 chipsets = ["CH592"]
 image.ch592 = "toki_test_firmware/toki.hex"
 
-[LOGICKI_TEST]
+[LOGIKI_TEST]
 chipsets = ["ESP32-S3"]
-image.esp32-s3 = "logicki_test/logicki.bin"
+image.esp32-s3 = "logiki_test/logiki.bin"
 
-[LOGICKI]
+[LOGIKI]
 chipsets = ["ESP32-S3"]
-image.esp32-s3 = "logicki/logicki.bin"
+image.esp32-s3 = "logiki/logiki.bin"
