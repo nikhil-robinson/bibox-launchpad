@@ -117,10 +117,6 @@ image.esp32-s3 = "2d-plotter/2d-plotter.bin"
 chipsets = ["CH592"]
 image.ch592 = "toki/toki.hex"
 
-[TOKI_P]
-chipsets = ["CH592"]
-image.ch592 = "toki_p/toki_p.hex"
-
 [ATR_H2_TEST]
 chipsets = ["ESP32-H2"]
 image.esp32-h2 = "atr_test/atr_h2.bin"
