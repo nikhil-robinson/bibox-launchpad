@@ -190,4 +190,4 @@ image.esp32-s3 = "crawlee3.0/crawlee3.0.bin"
 
 [TOKI_P]
 chipsets = ["CH592"]
-image.ch592 = "toki_p/toki_P.hex"
+image.ch592 = "toki_p/toki_p.hex"
